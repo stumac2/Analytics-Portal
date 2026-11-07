@@ -1399,7 +1399,7 @@ const bsw=document.createElement('div'); bsw.className='basemap-sw';
     });
     /* Insert basemap below all data layers */
     const first=map.getStyle().layers.find(l=>l.id!=='basemap');
-    map.addLayer({id:'basemap',type:'raster',source:'basemap-tiles',paint:{'raster-opacity':parseFloat(baseOpacitySlider?.value||1)}},first?first.id:undefined);
+    map.addLayer({id:'basemap',type:'raster',source:'basemap-tiles',paint:{'raster-opacity':parseFloat(baseOpacitySlider?.value||0.25)}},first?first.id:undefined);
   });
   bsw.appendChild(b);
 });
@@ -1414,7 +1414,7 @@ refPanel.innerHTML=`<summary>Layers</summary>
 <label><input type="checkbox" data-ref="hillshade"> Hillshade</label>
 <label><input type="checkbox" data-ref="contour"> Contour / topo</label>
 <div class="rl-section">Opacity</div>
-<div class="rl-slider-row">Base <input type="range" id="opacBase" min="0" max="1" step="0.05" value="1"> <span id="opacBaseVal">100%</span></div>
+<div class="rl-slider-row">Base <input type="range" id="opacBase" min="0" max="1" step="0.05" value="0.25"> <span id="opacBaseVal">25%</span></div>
 <div class="rl-slider-row">Data <input type="range" id="opacData" min="0" max="1" step="0.05" value="1"> <span id="opacDataVal">100%</span></div>
 </div>`;
 host.appendChild(refPanel);
