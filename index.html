@@ -111,6 +111,7 @@ select,input[type="search"]{font:inherit;font-size:13px;background:var(--panel);
 .maprow{display:grid;grid-template-columns:212px minmax(0,1fr);gap:14px;align-items:start}
 @media (max-width:860px){.maprow{grid-template-columns:minmax(0,1fr)}}
 .sidebar-col{display:flex;flex-direction:column;gap:14px}
+.mapcol-wrap{display:flex;flex-direction:column;gap:16px;min-width:0}
 .lp{padding:8px}
 /* My Project panel */
 .mp-h{font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--ink-3);padding:6px 8px 4px}
@@ -954,7 +955,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
     <div class="combo"><input id="mukimSel" type="text" role="combobox" autocomplete="off"
       aria-expanded="false" aria-controls="mukimList" aria-autocomplete="list" placeholder="All mukims">
       <ul id="mukimList" class="combo-list" role="listbox" hidden></ul></div>
-    <button type="button" id="clearSel" class="clearsel" title="Clear every selection and start from a blank map">Clear</button>
+    <button type="button" id="clearSel" class="clearsel">Clear</button>
     <label class="eyebrow" for="cmpSel" style="margin-left:6px;display:none">Compare</label>
     <div class="combo" style="display:none"><input id="cmpSel" type="text" role="combobox" autocomplete="off"
       aria-expanded="false" aria-controls="cmpList" aria-autocomplete="list" placeholder="None">
@@ -968,6 +969,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
   <aside class="card lp" id="lpanel" aria-label="Map layer"></aside>
   <aside class="card lp" id="myProj" aria-label="My project"></aside>
   </div>
+  <div class="mapcol-wrap">
   <div class="card mapbox">
     <div class="card-h">
       <h2 id="mapTitle">Composite resilience</h2>
@@ -1003,7 +1005,6 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
     <div class="stats" id="statBox" aria-live="polite"></div>
     <details class="linfo" id="layerInfo"></details>
   </div>
- </div>
 
   <div class="card" id="demoDetail" style="display:none">
     <div class="card-h"><h2 id="ddName">Select a district</h2>
@@ -1021,7 +1022,8 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
       <p class="empty">Click any district on the map, or a row in the table below, to see its domain scores and the indicators behind them.</p>
     </div>
   </div>
-</div>
+ </div><!-- /mapcol-wrap -->
+ </div><!-- /maprow -->
 
 
 <div class="card" style="margin-top:16px">
@@ -1370,7 +1372,7 @@ map.addControl(new maplibregl.ScaleControl({maxWidth:150,unit:'metric'}),'bottom
 
 /* Basemap switcher */
 const bsw=document.createElement('div'); bsw.className='basemap-sw';
-bsw.title='Basemap layers will go live when the portal moves to its public hosting environment.';
+/* no tooltip on basemap switcher */
 ['roads','satellite','terrain'].forEach(k=>{
   const b=document.createElement('button'); b.type='button';
   b.textContent=k.charAt(0).toUpperCase()+k.slice(1);
@@ -1426,11 +1428,11 @@ host.appendChild(cpToggle);
 const cpanel=document.createElement('div'); cpanel.className='cpanel'; cpanel.id='chartPanel';
 cpanel.innerHTML=`
 <div class="cpanel-head">
- <select id="cpType" title="Chart type"><option value="bar">Bar</option><option value="column">Column</option><option value="scatter">Scatter</option></select>
- <select id="cpLayer" title="Layer"></select>
- <select id="cpSort" title="Sort"><option value="desc">High to low</option><option value="asc">Low to high</option><option value="alpha">A-Z</option></select>
+ <select id="cpType"><option value="bar">Bar</option><option value="column">Column</option><option value="scatter">Scatter</option></select>
+ <select id="cpLayer"></select>
+ <select id="cpSort"><option value="desc">High to low</option><option value="asc">Low to high</option><option value="alpha">A-Z</option></select>
  <label title="National average"><input type="checkbox" id="cpAvg" checked> Avg</label>
- <label title="State average"><input type="checkbox" id="cpSAvg"> State avg</label>
+ <label><input type="checkbox" id="cpSAvg"> State avg</label>
  <label title="Colour by score"><input type="checkbox" id="cpColour" checked> Colour</label>
  <label title="Hide no-data"><input type="checkbox" id="cpNodata"> Hide n/a</label>
  <span style="display:flex;align-items:center;gap:3px"><label style="font:400 10px/1 var(--display);color:var(--ink-2)">Top N</label><input id="cpTopN" type="number" min="0" max="200" value="0" style="width:38px;font:400 10px/1.3 var(--display);padding:2px 3px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--ink)" title="0 = show all"></span>
@@ -1441,7 +1443,7 @@ cpanel.innerHTML=`
 </div>
 <div class="cpanel-geo">
  <button type="button" class="cpanel-close" title="Back to map">&#9776; Map</button>
- <select id="cpRegion" title="Region"><option value="all">All regions</option><option value="west">Peninsular</option><option value="east">East Malaysia</option></select>
+ <select id="cpRegion"><option value="all">All regions</option><option value="west">Peninsular</option><option value="east">East Malaysia</option></select>
  <div class="cp-ms" id="cpStateMsWrap"><button type="button" class="cp-ms-btn" id="cpStateBtn">All states</button><div class="cp-ms-drop" id="cpStateDrop"></div></div>
  <div class="cp-ms" id="cpDistMsWrap"><button type="button" class="cp-ms-btn" id="cpDistBtn">All districts</button><div class="cp-ms-drop" id="cpDistDrop"></div></div>
 </div>
