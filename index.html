@@ -409,6 +409,9 @@ select,input[type="search"]{font:inherit;font-size:13px;background:var(--panel);
 .ref-layers label{display:flex;align-items:center;gap:6px;color:var(--ink-2);cursor:pointer;white-space:nowrap;font-weight:400}
 .ref-layers label:hover{color:var(--ink)}
 .ref-layers input[type=checkbox]{accent-color:var(--accent);margin:0;width:13px;height:13px}
+.rl-section{font:600 9px/1 var(--display);color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;padding-top:4px;margin-top:2px;border-top:1px solid var(--line-2)}
+.rl-slider-row{display:flex;align-items:center;gap:6px;font:400 11px/1 var(--display);color:var(--ink-2);white-space:nowrap}
+.rl-slider-row input[type=range]{flex:1;height:3px;accent-color:var(--accent);cursor:pointer;min-width:60px}
 .map-label{pointer-events:none;white-space:nowrap;text-shadow:
  -1px -1px 0 rgba(255,255,255,.85),1px -1px 0 rgba(255,255,255,.85),
  -1px 1px 0 rgba(255,255,255,.85),1px 1px 0 rgba(255,255,255,.85),
@@ -1347,21 +1350,14 @@ const BASEMAPS={
     attribution:'&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)'
   }
 };
-let activeBasemap='roads';
+let activeBasemap=null;
 
 const map=new maplibregl.Map({
   container:'mlMap',
   style:{
     version:8,
-    sources:{
-      'basemap-tiles':{
-        type:'raster',
-        tiles:BASEMAPS.roads.tiles,
-        tileSize:BASEMAPS.roads.tileSize,
-        attribution:BASEMAPS.roads.attribution
-      }
-    },
-    layers:[{id:'basemap',type:'raster',source:'basemap-tiles'}],
+    sources:{},
+    layers:[],
     glyphs:'https://cdn.jsdelivr.net/gh/nickhutchinson/maplibre-gl-native-glyphs@main/{fontstack}/{range}.pbf'
   },
   center:[109.5,4.0],
@@ -1379,10 +1375,15 @@ bsw.title='Basemap layers will go live when the portal moves to its public hosti
   const b=document.createElement('button'); b.type='button';
   b.textContent=k.charAt(0).toUpperCase()+k.slice(1);
   b.dataset.bm=k;
-  b.title='Basemap layers will go live when the portal moves to its public hosting environment.';
-  if(k===activeBasemap) b.classList.add('on');
   b.addEventListener('click',()=>{
-    if(k===activeBasemap) return;
+    if(k===activeBasemap){
+      /* Deselect — turn off basemap */
+      activeBasemap=null;
+      bsw.querySelectorAll('button').forEach(x=>x.classList.remove('on'));
+      if(map.getLayer('basemap')) map.removeLayer('basemap');
+      if(map.getSource('basemap-tiles')) map.removeSource('basemap-tiles');
+      return;
+    }
     activeBasemap=k;
     bsw.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x.dataset.bm===k));
     /* Swap basemap by removing and re-adding the raster source+layer */
@@ -1396,7 +1397,7 @@ bsw.title='Basemap layers will go live when the portal moves to its public hosti
     });
     /* Insert basemap below all data layers */
     const first=map.getStyle().layers.find(l=>l.id!=='basemap');
-    map.addLayer({id:'basemap',type:'raster',source:'basemap-tiles'},first?first.id:undefined);
+    map.addLayer({id:'basemap',type:'raster',source:'basemap-tiles',paint:{'raster-opacity':parseFloat(baseOpacitySlider?.value||1)}},first?first.id:undefined);
   });
   bsw.appendChild(b);
 });
@@ -1410,6 +1411,9 @@ refPanel.innerHTML=`<summary>Layers</summary>
 <label><input type="checkbox" data-ref="labels"> Place labels</label>
 <label><input type="checkbox" data-ref="hillshade"> Hillshade</label>
 <label><input type="checkbox" data-ref="contour"> Contour / topo</label>
+<div class="rl-section">Opacity</div>
+<div class="rl-slider-row">Base <input type="range" id="opacBase" min="0" max="1" step="0.05" value="1"> <span id="opacBaseVal">100%</span></div>
+<div class="rl-slider-row">Data <input type="range" id="opacData" min="0" max="1" step="0.05" value="1"> <span id="opacDataVal">100%</span></div>
 </div>`;
 host.appendChild(refPanel);
 
@@ -2168,6 +2172,27 @@ function removeNativeLabels(){
 })();
 refPanel.querySelectorAll('input[data-ref]').forEach(cb=>{
   cb.addEventListener('change',()=>toggleRefLayer(cb.dataset.ref,cb.checked));
+});
+
+/* Opacity sliders */
+const baseOpacitySlider=document.getElementById('opacBase');
+const dataOpacitySlider=document.getElementById('opacData');
+const baseOpacityVal=document.getElementById('opacBaseVal');
+const dataOpacityVal=document.getElementById('opacDataVal');
+baseOpacitySlider.addEventListener('input',()=>{
+  const v=parseFloat(baseOpacitySlider.value);
+  baseOpacityVal.textContent=Math.round(v*100)+'%';
+  if(map.getLayer('basemap')) map.setPaintProperty('basemap','raster-opacity',v);
+  if(map.getLayer('hillshade-layer')) map.setPaintProperty('hillshade-layer','raster-opacity',v);
+  if(map.getLayer('contour-layer')) map.setPaintProperty('contour-layer','raster-opacity',v);
+});
+dataOpacitySlider.addEventListener('input',()=>{
+  const v=parseFloat(dataOpacitySlider.value);
+  dataOpacityVal.textContent=Math.round(v*100)+'%';
+  if(map.getLayer('fill-layer')) map.setPaintProperty('fill-layer','fill-opacity',v*0.75);
+  if(map.getLayer('state-fill')) map.setPaintProperty('state-fill','fill-opacity',v*0.75);
+  if(map.getLayer('demo-fill')) map.setPaintProperty('demo-fill','fill-opacity',v*0.75);
+  if(map.getLayer('demo-state-fill')) map.setPaintProperty('demo-state-fill','fill-opacity',v*0.75);
 });
 
 /* Tile error indicator (success/loading labels removed — they overlap Story Maps) */
