@@ -755,40 +755,28 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .flag{font-size:9.5px;font-family:var(--display);font-weight:600;letter-spacing:.03em;color:var(--warn);background:var(--warn-bg);border-radius:3px;padding:1px 4px;margin-left:5px;white-space:nowrap}
 .lp .flag{font-size:9px;letter-spacing:.03em;padding:1px 3px;margin-left:auto;flex:0 0 auto}
 .empty{color:var(--ink-3);font-size:13.5px}
-/* --- Spatial nav overlay --- */
-.nav-ov{position:absolute;top:0;left:0;bottom:0;width:min(300px,80%);background:var(--panel);
-  border-right:1px solid var(--line);z-index:5;transform:translateX(-100%);transition:transform .2s ease;
-  display:flex;flex-direction:column;box-shadow:2px 0 16px rgba(0,0,0,.1)}
-.nav-ov.open{transform:translateX(0)}
-.nav-ov-hdr{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;
-  border-bottom:1px solid var(--line-2);flex:0 0 auto}
-.nav-ov-hdr h3{font-family:var(--display);font-size:13px;font-weight:700;margin:0;color:var(--ink)}
-.nav-ov-x{background:none;border:0;cursor:pointer;color:var(--ink-3);padding:4px;border-radius:4px;display:flex;align-items:center;justify-content:center;width:24px;height:24px}
-.nav-ov-x:hover{background:var(--line-2);color:var(--ink)}
-.nav-ov-body{flex:1 1 0;overflow-y:auto;padding:6px;scrollbar-width:thin;scrollbar-color:var(--ink-3) transparent}
-.nav-sect{margin-bottom:4px}
-.nav-sect-h{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.03em;
-  color:var(--ink-3);padding:5px 6px;display:flex;align-items:center;gap:6px;text-transform:uppercase}
-.nav-sect-h .dot{width:8px;height:8px;border-radius:2px;flex:0 0 auto}
-.nav-grp{margin:0 0 2px 2px;border-left:2px solid var(--line-2);padding-left:6px}
-.nav-grp-h{font-family:var(--display);font-size:10.5px;font-weight:600;color:var(--ink-2);padding:3px 4px;margin-top:2px}
-.nav-row{display:flex;align-items:center;gap:4px;padding:3px 4px;border-radius:5px;cursor:pointer;font-size:11.5px;color:var(--ink-2)}
-.nav-row:hover{background:var(--line-2);color:var(--ink)}
-.nav-row.active{background:var(--accent-soft);color:var(--ink);font-weight:600}
-.nav-row .nm{flex:1 1 0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.nav-res{display:flex;gap:2px;flex:0 0 auto}
-.nav-rb{font-size:8px;font-family:var(--display);font-weight:700;letter-spacing:.04em;
-  padding:1px 4px;border-radius:3px;border:1px solid transparent;cursor:pointer;line-height:1.4}
-.nav-rb.ok{color:var(--accent);background:var(--accent-soft)}
-.nav-rb.ok:hover{border-color:var(--accent)}
-.nav-rb.on{background:var(--accent);color:#fff}
-.nav-rb.na{color:var(--ink-3);opacity:.3;cursor:default;background:var(--line-2)}
-.nav-trig{position:absolute;top:10px;left:10px;z-index:4;background:var(--panel);border:1px solid var(--line);
-  border-radius:7px;padding:5px 9px;cursor:pointer;display:flex;align-items:center;gap:5px;
-  font:inherit;font-family:var(--display);font-size:11px;font-weight:600;color:var(--ink-2);
-  box-shadow:0 1px 4px rgba(0,0,0,.08)}
-.nav-trig:hover{color:var(--ink);border-color:var(--ink-3)}
-.nav-trig svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
+/* --- Resolution picker --- */
+.res-pick{position:relative;display:inline-block}
+.res-btn{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:3px 8px;
+  cursor:pointer;font:inherit;font-family:var(--display);font-size:10px;font-weight:600;
+  color:var(--ink-2);display:inline-flex;align-items:center;gap:4px;letter-spacing:.02em}
+.res-btn:hover{color:var(--ink);border-color:var(--ink-3)}
+.res-btn svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2}
+.res-pop{display:none;position:absolute;top:100%;left:0;z-index:20;margin-top:4px;
+  background:var(--panel);border:1px solid var(--line);border-radius:8px;
+  box-shadow:0 4px 16px rgba(0,0,0,.12);padding:8px 0;min-width:180px;max-width:240px}
+.res-pop.open{display:block}
+.res-pop-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;
+  color:var(--ink-3);padding:2px 12px 6px;text-transform:uppercase;border-bottom:1px solid var(--line-2);margin-bottom:4px}
+.res-pop-name{font-size:11.5px;font-weight:600;color:var(--ink);padding:4px 12px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res-pop-opts{display:flex;gap:4px;padding:6px 12px}
+.res-opt{flex:1;text-align:center;font-family:var(--display);font-size:10px;font-weight:700;
+  letter-spacing:.04em;padding:5px 4px;border-radius:5px;cursor:pointer;border:1px solid transparent;transition:all .12s}
+.res-opt.ok{color:var(--accent);background:var(--accent-soft)}
+.res-opt.ok:hover{border-color:var(--accent)}
+.res-opt.on{background:var(--accent);color:#fff}
+.res-opt.na{color:var(--ink-3);opacity:.35;cursor:default;background:var(--line-2)}
 
 .tbl-wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:620px}
@@ -1007,7 +995,16 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
 <div class="grid">
  <div class="maprow">
   <div class="sidebar-col">
-  <aside class="card lp" id="lpanel" aria-label="Map layer"></aside>
+  <aside class="card lp" id="lpanel" aria-label="Map layer">
+    <div id="resPick" class="res-pick" style="position:absolute;top:6px;right:6px;z-index:3">
+      <button type="button" class="res-btn" id="resBtn"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span id="resGeo">DIST</span></button>
+      <div class="res-pop" id="resPop">
+        <div class="res-pop-h">Resolution</div>
+        <div class="res-pop-name" id="resLayerName">—</div>
+        <div class="res-pop-opts" id="resOpts"></div>
+      </div>
+    </div>
+  </aside>
   <aside class="card lp" id="myProj" aria-label="My project"></aside>
   </div>
   <div class="mapcol-wrap">
@@ -1041,13 +1038,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
       </div>
     </div>
     <div class="card-b" style="padding:10px 12px 14px">
-      <div id="mapHost" style="position:relative">
-        <button type="button" class="nav-trig" id="navTrig"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Layers</button>
-        <div class="nav-ov" id="navOv">
-          <div class="nav-ov-hdr"><h3>Spatial layers</h3><button type="button" class="nav-ov-x" id="navClose">&times;</button></div>
-          <div class="nav-ov-body" id="navBody"></div>
-        </div>
-      </div>
+      <div id="mapHost" style="position:relative"></div>
     </div>
     <div class="stats" id="statBox" aria-live="polite"></div>
     <details class="linfo" id="layerInfo"></details>
@@ -4751,144 +4742,86 @@ const lp=document.getElementById('lpanel');
   if(cfcDet) cfcDet.addEventListener('toggle',()=>{ if(cfcDet.open){ accordionClose(cfcDet); switchProject('cfc'); } });
   /* No auto-open — user must explicitly select a project */
 })();
-/* ---------- Spatial navigation overlay ---------- */
-(function buildNavOverlay(){
-  const navOv=document.getElementById('navOv');
-  const navBody=document.getElementById('navBody');
-  const navTrig=document.getElementById('navTrig');
-  const navClose=document.getElementById('navClose');
-  if(!navOv||!navBody||!navTrig)return;
-  navTrig.addEventListener('click',()=>navOv.classList.toggle('open'));
-  navClose.addEventListener('click',()=>navOv.classList.remove('open'));
-  /* Build layer catalogue with resolution availability */
-  let h='';
-  /* — Demography — */
-  h+=`<div class="nav-sect"><div class="nav-sect-h"><span class="dot" style="background:var(--g5)"></span>Demography</div>`;
-  for(const cat of DCAT_ORDER){
-    h+=`<div class="nav-grp"><div class="nav-grp-h">${cat}</div>`;
-    /* district-level demo layers */
-    DLAYERS.filter(l=>l.cat===cat).forEach(l=>{
-      h+=`<div class="nav-row" data-nav-demo="${l.k}"><span class="nm" title="${l.title}">${l.label}</span><span class="nav-res">`+
-         `<span class="nav-rb na">STATE</span><span class="nav-rb ok" data-geo="district">DIST</span><span class="nav-rb na">MUKIM</span></span></div>`;
-    });
-    /* mukim-level demo layers */
-    if(typeof MKDLAYERS!=='undefined'){
-      MKDLAYERS.filter(l=>l.cat===cat).forEach(l=>{
-        h+=`<div class="nav-row" data-nav-mk="${l.k}" data-nav-proj="demo"><span class="nm" title="${l.title}">${l.label}</span><span class="nav-res">`+
-           `<span class="nav-rb na">STATE</span><span class="nav-rb na">DIST</span><span class="nav-rb ok" data-geo="mukim">MUKIM</span></span></div>`;
-      });
+/* ---------- Resolution picker ---------- */
+(function initResPicker(){
+  const resBtn=document.getElementById('resBtn');
+  const resPop=document.getElementById('resPop');
+  const resOpts=document.getElementById('resOpts');
+  const resName=document.getElementById('resLayerName');
+  const resGeo=document.getElementById('resGeo');
+  if(!resBtn||!resPop)return;
+  /* toggle popover */
+  resBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    resPop.classList.toggle('open');
+    if(resPop.classList.contains('open')) updateResPicker();
+  });
+  document.addEventListener('click',()=>resPop.classList.remove('open'));
+  resPop.addEventListener('click',e=>e.stopPropagation());
+  /* determine what resolutions the current layer supports */
+  function getLayerRes(){
+    /* returns {name, resolutions:[{geo,available}]} */
+    const res=[{geo:'state',ok:false},{geo:'district',ok:false},{geo:'mukim',ok:false}];
+    let name='—';
+    if(activeProject==='demo' && layerChosen){
+      /* district-level demo layer */
+      const dl=DLAYERS.find(l=>l.k===demoLayer);
+      if(dl){ name=dl.label; res[1].ok=true; }
+      /* check if mukim version exists */
+      if(typeof MKDLAYERS!=='undefined'){
+        const mk=MKDLAYERS.find(l=>l.k===demoLayer);
+        if(mk) res[2].ok=true;
+      }
+    } else if(geoMode==='mukim' && layerChosen){
+      /* mukim layer */
+      if(typeof MKLAYERS!=='undefined' && MKLAYERS[mkLayerKey]){
+        name=MKLAYERS[mkLayerKey].label; res[2].ok=true;
+      } else if(typeof MKRPI_LAYERS!=='undefined' && MKRPI_LAYERS[mkLayerKey]){
+        name=MKRPI_LAYERS[mkLayerKey].label; res[2].ok=true;
+      } else if(typeof MKDLAYERS!=='undefined'){
+        const mk=MKDLAYERS.find(l=>l.k===mkLayerKey);
+        if(mk){ name=mk.label; res[2].ok=true; }
+      }
+    } else if(activeProject==='rpi' && layerChosen){
+      if(indKey){
+        /* indicator — find it in M.meta */
+        for(const dom of ['Social','Economic','Physical','Climate']){
+          const found=M.meta[dom].find(([key])=>M.pref[dom]+key===indKey);
+          if(found){ name=found[1]; res[0].ok=true; res[1].ok=!found[2]; break; }
+        }
+      } else {
+        /* composite or domain */
+        const composites={RPI_core:'Composite index',Capacity:'Capacity',Vulnerability:'Vulnerability',
+          Social:'Social',Economic:'Economic',Physical:'Physical',Climate:'Climate'};
+        name=composites[layer]||layer;
+        res[0].ok=true; res[1].ok=true;
+      }
     }
-    h+=`</div>`;
+    return {name,res};
   }
-  h+=`</div>`;
-  /* — RPI — */
-  h+=`<div class="nav-sect"><div class="nav-sect-h"><span class="dot" style="background:var(--v4)"></span>Resilient Places Index</div>`;
-  /* composites */
-  h+=`<div class="nav-grp"><div class="nav-grp-h">Composites</div>`;
-  h+=`<div class="nav-row" data-nav-k="RPI_core"><span class="nm">Composite index</span><span class="nav-res">`+
-     `<span class="nav-rb ok" data-geo="state">STATE</span><span class="nav-rb ok" data-geo="district">DIST</span><span class="nav-rb na">MUKIM</span></span></div>`;
-  if(typeof MKRPI_LAYERS!=='undefined'){
-    h+=`<div class="nav-row" data-nav-mk="osm_score"><span class="nm">Infrastructure index (OSM)</span><span class="nav-res">`+
-       `<span class="nav-rb na">STATE</span><span class="nav-rb na">DIST</span><span class="nav-rb ok" data-geo="mukim">MUKIM</span></span></div>`;
+  function updateResPicker(){
+    const {name,res}=getLayerRes();
+    resName.textContent=name;
+    resGeo.textContent=geoMode==='state'?'STATE':geoMode==='district'?'DIST':'MUKIM';
+    resOpts.innerHTML=res.map(r=>{
+      const label=r.geo==='state'?'STATE':r.geo==='district'?'DIST':'MUKIM';
+      const cls=r.ok?(r.geo===geoMode?'res-opt ok on':'res-opt ok'):'res-opt na';
+      return `<div class="${cls}" data-rg="${r.geo}">${label}</div>`;
+    }).join('');
   }
-  h+=`<div class="nav-row" data-nav-k="Capacity"><span class="nm">Capacity</span><span class="nav-res">`+
-     `<span class="nav-rb ok" data-geo="state">STATE</span><span class="nav-rb ok" data-geo="district">DIST</span><span class="nav-rb na">MUKIM</span></span></div>`;
-  h+=`<div class="nav-row" data-nav-k="Vulnerability"><span class="nm">Vulnerability</span><span class="nav-res">`+
-     `<span class="nav-rb ok" data-geo="state">STATE</span><span class="nav-rb ok" data-geo="district">DIST</span><span class="nav-rb na">MUKIM</span></span></div>`;
-  h+=`</div>`;
-  /* domains */
-  for(const dom of ['Social','Economic','Physical','Climate']){
-    h+=`<div class="nav-grp"><div class="nav-grp-h">${dom}</div>`;
-    h+=`<div class="nav-row" data-nav-k="${dom}"><span class="nm">${dom} domain score</span><span class="nav-res">`+
-       `<span class="nav-rb ok" data-geo="state">STATE</span><span class="nav-rb ok" data-geo="district">DIST</span><span class="nav-rb na">MUKIM</span></span></div>`;
-    /* indicators */
-    M.meta[dom].forEach(([key,label,isState])=>{
-      const kk=M.pref[dom]+key;
-      const stBadge=`<span class="nav-rb ok" data-geo="state">STATE</span>`;
-      const dBadge=isState?`<span class="nav-rb na">DIST</span>`:`<span class="nav-rb ok" data-geo="district">DIST</span>`;
-      h+=`<div class="nav-row" data-nav-ind="${kk}"><span class="nm" title="${label}">${label}</span><span class="nav-res">`+
-         stBadge+dBadge+`<span class="nav-rb na">MUKIM</span></span></div>`;
-    });
-    /* mukim geographic context layers */
-    const mkKeys=MKDOM(dom);
-    if(mkKeys.length){
-      mkKeys.forEach(k=>{
-        const m=MKLAYERS[k];
-        h+=`<div class="nav-row" data-nav-mk="${k}"><span class="nm" title="${m.title}">${m.label}</span><span class="nav-res">`+
-           `<span class="nav-rb na">STATE</span><span class="nav-rb na">DIST</span><span class="nav-rb ok" data-geo="mukim">MUKIM</span></span></div>`;
-      });
-    }
-    /* OSM infrastructure layers */
-    if(typeof MKRPI_LAYERS!=='undefined'){
-      const osmKeys=Object.keys(MKRPI_LAYERS).filter(k=>MKRPI_LAYERS[k].dom===dom);
-      osmKeys.forEach(k=>{
-        const m=MKRPI_LAYERS[k];
-        h+=`<div class="nav-row" data-nav-mk="${k}"><span class="nm">${m.label}</span><span class="nav-res">`+
-           `<span class="nav-rb na">STATE</span><span class="nav-rb na">DIST</span><span class="nav-rb ok" data-geo="mukim">MUKIM</span></span></div>`;
-      });
-    }
-    h+=`</div>`;
-  }
-  h+=`</div>`;
-  navBody.innerHTML=h;
-  /* click handler for overlay rows and resolution badges */
-  navBody.addEventListener('click',e=>{
-    const rb=e.target.closest('.nav-rb.ok');
-    const row=e.target.closest('.nav-row');
-    if(!row)return;
-    /* determine target geo mode */
-    let targetGeo=null;
-    if(rb) targetGeo=rb.dataset.geo;
-    else{
-      /* click on row name — pick first available resolution */
-      const first=row.querySelector('.nav-rb.ok');
-      if(first) targetGeo=first.dataset.geo;
-    }
-    if(!targetGeo)return;
-    /* activate the layer */
-    if(row.dataset.navDemo){
-      demoLayer=row.dataset.navDemo;
-      activeProject='demo';
-      markActiveProject('demo');
-      layerChosen=true;
-      if(targetGeo!==geoMode && (targetGeo==='district'||targetGeo==='state')) setGeoMode(targetGeo);
-      if(typeof cpSyncLayerDropdown==='function') cpSyncLayerDropdown();
-      paint();
-      renderProjectLayerInfo('demo');
-      if(sel) renderDemoDetail();
-    } else if(row.dataset.navMk){
-      mkLayerKey=row.dataset.navMk;
-      if(mkLayerSel) mkLayerSel.value=row.dataset.navMk;
-      if(row.dataset.navProj==='demo'){activeProject='demo';markActiveProject('demo');}
-      else{ if(activeProject!=='rpi'){activateRpi();markActiveProject('rpi');} }
-      layerChosen=true;
-      vRaw.disabled=true; rawMode=false; setVToggle();
-      if(geoMode!=='mukim') setGeoMode('mukim'); else { paint(); renderTable(); }
-    } else if(row.dataset.navInd){
-      indKey=row.dataset.navInd;
-      if(activeProject!=='rpi'){activateRpi();markActiveProject('rpi');}
-      layerChosen=true;
-      if(targetGeo!==geoMode) setGeoMode(targetGeo);
-      const on=true; vRaw.disabled=false;
-      if(typeof cpSyncLayerDropdown==='function') cpSyncLayerDropdown();
-      paint(); renderTable(); if(sel)renderDetail();
-    } else if(row.dataset.navK){
-      indKey=null; layer=row.dataset.navK;
-      if(activeProject!=='rpi'){activateRpi();markActiveProject('rpi');}
-      layerChosen=true;
-      if(targetGeo!==geoMode) setGeoMode(targetGeo);
-      vRaw.disabled=true; rawMode=false; setVToggle();
-      if(typeof cpSyncLayerDropdown==='function') cpSyncLayerDropdown();
-      paint(); renderTable(); if(sel)renderDetail();
-    }
-    /* highlight active row */
-    navBody.querySelectorAll('.nav-row.active').forEach(r=>r.classList.remove('active'));
-    row.classList.add('active');
-    navBody.querySelectorAll('.nav-rb.on').forEach(r=>r.classList.remove('on'));
-    if(rb) rb.classList.add('on');
-    else{ const f=row.querySelector('.nav-rb.ok'); if(f) f.classList.add('on'); }
-    /* also sync sidebar panel current indicator */
-    lp.querySelectorAll('button[aria-current="true"]').forEach(x=>x.removeAttribute('aria-current'));
+  /* click resolution option */
+  resOpts.addEventListener('click',e=>{
+    const opt=e.target.closest('.res-opt.ok');
+    if(!opt)return;
+    const tg=opt.dataset.rg;
+    if(tg===geoMode)return;
+    setGeoMode(tg);
+    resPop.classList.remove('open');
+    updateResPicker();
+  });
+  /* keep label in sync — update whenever popover opens or geoMode buttons are clicked */
+  document.getElementById('geoTog').addEventListener('click',()=>{
+    setTimeout(()=>{ resGeo.textContent=geoMode==='state'?'STATE':geoMode==='district'?'DIST':'MUKIM'; },50);
   });
 })();
 let activeProject=null;
