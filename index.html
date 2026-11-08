@@ -1544,6 +1544,59 @@ cpToggle.addEventListener('click',()=>cpSetOpen(true));
 cpCloseBtn.addEventListener('click',()=>cpSetOpen(false));
 
 /* Populate layer dropdown based on activeProject */
+/* ── Mukim-level chart support (BUG-007) ── */
+const CP_MKGEO_IX={coast_km:0,urban_km:1,heat:2,rain:3,periph:4};
+let _cpMkRows=null;
+function cpMukimRows(){
+  if(_cpMkRows) return _cpMkRows;
+  const feats=(typeof MKMAP!=='undefined'&&MKMAP.features)?MKMAP.features:[];
+  const seen=new Set();_cpMkRows=[];
+  feats.forEach(f=>{
+    const n=f.properties.n; if(!n||seen.has(n)) return; seen.add(n);
+    const dCode=(typeof MKDATA!=='undefined'&&MKDATA[n])?MKDATA[n][0]:f.properties.d;
+    const dr=(typeof rows!=='undefined'?rows:[]).find(x=>x.code===dCode);
+    _cpMkRows.push({code:n,name:String(n).replace(/^MUKIM /,''),dist:dCode,state:dr?dr.state:null,_mk:true});
+  });
+  return _cpMkRows;
+}
+function cpMkMeta(k){
+  const d=MKDLAYERS.find(l=>l.k===k); if(d) return {label:d.label,unit:d.unit,fmt:d.fmt};
+  if(typeof MKRPI_LAYERS!=='undefined'&&MKRPI_LAYERS[k]) return {label:MKRPI_LAYERS[k].label,unit:MKRPI_LAYERS[k].unit};
+  if(MKLAYERS[k]) return {label:MKLAYERS[k].label,unit:MKLAYERS[k].unit};
+  return null;
+}
+function cpAddMukimOptions(sel){
+  const groups=[];
+  if(typeof MKRPI_LAYERS!=='undefined') groups.push(['Mukim · Resilience (OSM)',Object.keys(MKRPI_LAYERS).filter(k=>!k.startsWith('mk_')).map(k=>[k,MKRPI_LAYERS[k].label])]);
+  groups.push(['Mukim · Demographics',MKDLAYERS.map(l=>[l.k,l.label])]);
+  groups.push(['Mukim · Geography',Object.keys(MKLAYERS).map(k=>[k,MKLAYERS[k].label])]);
+  groups.forEach(([lbl,items])=>{
+    const og=document.createElement('optgroup');og.label=lbl;
+    items.forEach(([k,t])=>{const o=document.createElement('option');o.value='mk:'+k;o.textContent=t;og.appendChild(o);});
+    if(og.children.length) sel.appendChild(og);
+  });
+}
+function cpSelectMukim(nm){
+  if(geoMode!=='mukim'&&typeof setGeoMode==='function') setGeoMode('mukim');
+  selMukim=nm; compMukim=null; mkComparing=false;
+  if(typeof mks!=='undefined') mks.value=nm;
+  const mk=(typeof MKDATA!=='undefined')?MKDATA[nm]:null;
+  if(mk){
+    const dCode=mk[0];
+    if(typeof ds!=='undefined'&&ds.value!==dCode) ds.value=dCode;
+    sel=dCode;
+    const r=rows.find(x=>x.code===dCode);
+    if(r&&typeof sts!=='undefined'&&sts.value!==r.state){stateF=r.state;sts.value=r.state;fillDistricts();}
+  }
+  paint(); renderTable(); renderStats();
+  if(activeProject==='rpi'&&typeof renderMukimDetail==='function') renderMukimDetail();
+  const b=(typeof MKBB!=='undefined')?MKBB[nm]:null; if(b) zoomBox(b,1.4);
+  cpAfterSelect();
+}
+function cpPick(code){
+  if(String(cpLayerS.value).startsWith('mk:')) cpSelectMukim(code);
+  else if(typeof select==='function') select(code);
+}
 function cpPopulateLayers(){
   cpLayerS.innerHTML='';
   if(activeProject==='rpi'||activeProject===null){
@@ -1562,12 +1615,14 @@ function cpPopulateLayers(){
   } else if(activeProject==='demo'){
     DLAYERS.forEach(l=>{const o=document.createElement('option');o.value='demo:'+l.k;o.textContent=l.label;cpLayerS.appendChild(o);});
   }
+  cpAddMukimOptions(cpLayerS);
   /* Set current layer as selected */
   cpSyncLayerDropdown();
   cpPopulateScatterAxes();
   cpPopulateStates();
 }
 function cpSyncLayerDropdown(){
+  if(geoMode==='mukim'&&mkLayerKey&&mkLayerKey!=='rpi'&&cpMkMeta(mkLayerKey)){cpLayerS.value='mk:'+mkLayerKey;return;}
   if(activeProject==='rpi'||activeProject===null){
     if(indKey) cpLayerS.value='ind:'+indKey;
     else cpLayerS.value='rpi:'+layer;
@@ -1583,6 +1638,7 @@ function cpPopulateScatterAxes(){
     } else if(activeProject==='demo'){
       DLAYERS.forEach(l=>{const o=document.createElement('option');o.value='demo:'+l.k;o.textContent=l.label;sel.appendChild(o);});
     }
+    cpAddMukimOptions(sel);
   });
   /* default X/Y to first two options */
   if(cpScX.options.length>1){cpScX.selectedIndex=0;cpScY.selectedIndex=1;}
@@ -1655,6 +1711,14 @@ function cpUpdateDistBtn(){
 }
 function cpGeoFilter(r){
   const reg=cpRegionS.value;
+  if(r._mk){
+    const east=EAST_STATES.indexOf(r.state)>=0;
+    if(reg==='east'&&!east) return false;
+    if(reg==='west'&&east) return false;
+    if(cpSelectedStates.size>0&&!cpSelectedStates.has(r.state)) return false;
+    if(cpSelectedDists.size>0&&!cpSelectedDists.has(r.dist)) return false;
+    return true;
+  }
   const sv=isStateView()&&!window._cpForceDistrict;
   if(reg!=='all'){
     const east=sv? EAST_STATES.indexOf(r.code)>=0 : (typeof isEast==='function'?isEast(r):false);
@@ -1687,6 +1751,12 @@ function cpVal(r,lk){
     const dm=sv?(SDEMO[r.code]||{}):(DEMO[r.code]||{});
     return dm[k]!=null?dm[k]:null;
   }
+  if(ns==='mk'){
+    if(!r._mk) return null;
+    if(k in CP_MKGEO_IX){const g=(typeof MKGEO!=='undefined')?MKGEO[r.code]:null;const v=g?g[CP_MKGEO_IX[k]]:null;return v!=null&&!isNaN(v)?v:null;}
+    const v=mkrpiScore(r.code,k);
+    return v!=null&&isFinite(v)?v:null;
+  }
   return null;
 }
 function cpFmt(v,lk){
@@ -1694,6 +1764,7 @@ function cpFmt(v,lk){
   if(!lk) return String(v);
   const [ns,k]=lk.split(':');
   if(ns==='demo'){const dl=DLAYERS.find(l=>l.k===k);return dl?dl.fmt(v):v.toFixed(2);}
+  if(ns==='mk'){const m=cpMkMeta(k);if(m&&m.fmt)return m.fmt(v);const u=m&&m.unit?(m.unit.startsWith(' ')||m.unit==='°C'||m.unit==='%'?m.unit:' '+m.unit):'';return (Math.abs(v)>=100?v.toLocaleString(undefined,{maximumFractionDigits:0}):v.toFixed(Math.abs(v)>=10?1:2))+u;}
   if(ns==='ind'&&typeof fmtRaw==='function'&&rawMode) return fmtRaw(k,v);
   return typeof v==='number'?v.toFixed(3):String(v);
 }
@@ -1703,6 +1774,7 @@ function cpLabel(lk){
   if(ns==='rpi'){const l=LAYERS.find(x=>x.k===k);return l?l.label:k;}
   if(ns==='ind'){const m=META(k);return m?m[1].split(' (')[0]:k;}
   if(ns==='demo'){const l=DLAYERS.find(x=>x.k===k);return l?l.label:k;}
+  if(ns==='mk'){const m=cpMkMeta(k);return m?m.label+' (mukim)':k;}
   return k;
 }
 /* Main chart render */
@@ -1717,7 +1789,8 @@ function cpRefresh(){
   const cpForceDistrict=mapByState && cpSelectedStates.size>0 && !cpStatesOnly;
   const byState=mapByState && !cpForceDistrict;
   window._cpForceDistrict=cpForceDistrict;
-  let list=(cpForceDistrict?rows:activeRows()).filter(cpGeoFilter).map(r=>({...r,_v:cpVal(r,lk)}));
+  const cpMk=String(ctype==='scatter'?cpScX.value:lk).startsWith('mk:');
+  let list=(cpMk?cpMukimRows():(cpForceDistrict?rows:activeRows())).filter(cpGeoFilter).map(r=>({...r,_v:cpVal(r,lk)}));
   if(cpNodataCb.checked) list=list.filter(r=>r._v!=null&&!isNaN(r._v));
   const sortMode=cpSortS.value;
   if(ctype!=='scatter'){
@@ -1733,11 +1806,11 @@ function cpRefresh(){
   let stAvg=null;
   if(!byState && cpSelectedStates.size===1 && cpSAvgCb.checked){
     const cpSt=[...cpSelectedStates][0];
-    const stRows=activeRows().filter(r=>r.state===cpSt).map(r=>cpVal(r,lk)).filter(v=>v!=null&&!isNaN(v));
+    const stRows=(cpMk?cpMukimRows():activeRows()).filter(r=>r.state===cpSt).map(r=>cpVal(r,lk)).filter(v=>v!=null&&!isNaN(v));
     stAvg=stRows.length?(stRows.reduce((s,v)=>s+v,0)/stRows.length):null;
   }
   /* Info line */
-  cpInfo.innerHTML=cpLabel(lk)+' - '+list.length+(byState?' states':' districts')+(natAvg!=null?' - avg <b>'+cpFmt(natAvg,lk)+'</b>':'');
+  cpInfo.innerHTML=cpLabel(lk)+' - '+list.length+(cpMk?' mukims':byState?' states':' districts')+(natAvg!=null?' - avg <b>'+cpFmt(natAvg,lk)+'</b>':'');
 
   /* Compute chart-local breaks for choropleth colouring (all layer types) */
   let cpBR=null;
@@ -1776,7 +1849,7 @@ function cpColour(v,lk,useColour,cpBR){
   /* All colours returned as hardcoded hex — CSS vars fail in artifact iframe inline styles */
   if(!useColour||v==null) return '#000F9F';
   const [ns,k]=lk.split(':');
-  if((ns==='rpi'||ns==='ind')&&cpBR&&cpBR.length){
+  if((ns==='rpi'||ns==='ind'||ns==='mk')&&cpBR&&cpBR.length){
     let bi=-1;if(v!=null&&!isNaN(v)){bi=0;while(bi<cpBR.length&&v>=cpBR[bi])bi++;}
     return bi<0?'#e6e6e6':resolveRamp(bi);
   }
@@ -1812,7 +1885,7 @@ function cpDrawBar(list,vals,natAvg,stAvg,lk,cpBR,byState){
     const pct=(v!=null&&max>0)?(v/max*100):0;
     const col=cpColour(v,lk,useCol,cpBR);
     const valStr=cpFmt(v,lk);
-    const isSel=(r.code===sel||r.code===selB);
+    const isSel=r._mk?(r.code===selMukim||r.code===compMukim):(r.code===sel||r.code===selB);
     const lbl=byState?r.name:(multiSt&&r.state?(r.state+' - '+r.name):r.name);
     html+='<div class="cp-bar-row'+(isSel?' sel':'')+'" data-code="'+r.code+'" data-name="'+lbl+'" data-val="'+valStr+'">';
     html+='<span class="cp-bar-rank">'+(i+1)+'</span>';
@@ -1821,7 +1894,7 @@ function cpDrawBar(list,vals,natAvg,stAvg,lk,cpBR,byState){
     html+='<span class="cp-bar-val">'+valStr+'</span></div>';
   });
   cpBody.innerHTML=html;
-  cpBody.onclick=e=>{const row=e.target.closest('.cp-bar-row');if(row&&typeof select==='function')select(row.dataset.code);};
+  cpBody.onclick=e=>{const row=e.target.closest('.cp-bar-row');if(row)cpPick(row.dataset.code);};
 }
 
 /* COLUMN chart */
@@ -1838,7 +1911,7 @@ function cpDrawColumn(list,vals,natAvg,stAvg,lk,cpBR,byState){
     const v=r._v;
     const pct=(v!=null&&max>0)?(Math.abs(v)/max*100):0;
     const col=cpColour(v,lk,useCol,cpBR);
-    const isSel=(r.code===sel||r.code===selB);
+    const isSel=r._mk?(r.code===selMukim||r.code===compMukim):(r.code===sel||r.code===selB);
     const lbl=byState?r.name:(multiSt&&r.state?(r.state+' - '+r.name):r.name);
     html+='<div class="cp-col-bar'+(isSel?' sel':'')+'" data-code="'+r.code+'" data-name="'+lbl+'" data-val="'+cpFmt(v,lk)+'" style="height:'+pct.toFixed(1)+'%;background:'+col+'">';
     if(list.length<=40) html+='<span class="cp-col-lbl" style="font-size:'+fs+'px" title="'+lbl+'">'+lbl+'</span>';
@@ -1846,14 +1919,14 @@ function cpDrawColumn(list,vals,natAvg,stAvg,lk,cpBR,byState){
   });
   html+='</div>';
   cpBody.innerHTML=html;
-  cpBody.onclick=e=>{const bar=e.target.closest('.cp-col-bar');if(bar&&typeof select==='function')select(bar.dataset.code);};
+  cpBody.onclick=e=>{const bar=e.target.closest('.cp-col-bar');if(bar)cpPick(bar.dataset.code);};
 }
 
 /* SCATTER chart */
 function cpDrawScatter(list,lk){
   const xKey=cpScX.value;
   const yKey=cpScY.value;
-  const pts=list.map(r=>({code:r.code,name:r.name,x:cpVal(r,xKey),y:cpVal(r,yKey)})).filter(p=>p.x!=null&&p.y!=null&&!isNaN(p.x)&&!isNaN(p.y));
+  const pts=list.map(r=>({code:r.code,name:r.name,_mk:r._mk,x:cpVal(r,xKey),y:cpVal(r,yKey)})).filter(p=>p.x!=null&&p.y!=null&&!isNaN(p.x)&&!isNaN(p.y));
   if(!pts.length){cpBody.innerHTML='<p style="color:var(--ink-2);font-size:11px">No data for selected axes.</p>';return;}
   const xMin=Math.min(...pts.map(p=>p.x)),xMax=Math.max(...pts.map(p=>p.x));
   const yMin=Math.min(...pts.map(p=>p.y)),yMax=Math.max(...pts.map(p=>p.y));
@@ -1883,7 +1956,7 @@ function cpDrawScatter(list,lk){
   }
   /* points */
   pts.forEach(p=>{
-    const isSel=(p.code===sel||p.code===selB);
+    const isSel=p._mk?(p.code===selMukim||p.code===compMukim):(p.code===sel||p.code===selB);
     svg+='<circle cx="'+sx(p.x).toFixed(1)+'" cy="'+sy(p.y).toFixed(1)+'" r="'+(isSel?5:3.5)+'" fill="var(--accent)" opacity="'+(isSel?1:0.6)+'" stroke="'+(isSel?'var(--ink)':'none')+'" stroke-width="1" data-code="'+p.code+'"><title>'+p.name+'\n'+cpLabel(xKey)+': '+cpFmt(p.x,xKey)+'\n'+cpLabel(yKey)+': '+cpFmt(p.y,yKey)+'</title></circle>';
   });
   svg+='</svg>';
@@ -1891,7 +1964,7 @@ function cpDrawScatter(list,lk){
   cpBody.innerHTML=svg;
   cpBody.querySelector('svg').addEventListener('click',e=>{
     const c=e.target.closest('circle');
-    if(c&&typeof select==='function') select(c.dataset.code);
+    if(c){ if(String(xKey).startsWith('mk:')) cpSelectMukim(c.dataset.code); else if(typeof select==='function') select(c.dataset.code); }
   });
 }
 
@@ -1911,6 +1984,13 @@ cpLayerS.addEventListener('change',()=>{
   } else if(ns==='demo'){
     demoLayer=k;
     if(activeProject!=='demo'){ activeProject='demo'; if(typeof markActiveProject==='function') markActiveProject('demo'); }
+  } else if(ns==='mk'){
+    mkLayerKey=k; layerChosen=true;
+    if(mkLayerSel) mkLayerSel.value=k;
+    if(activeProject!=='rpi'){ activateRpi(); markActiveProject('rpi'); }
+    if(geoMode!=='mukim'){ setGeoMode('mukim'); cpSyncLayerDropdown(); cpLayerS.value=lk; }
+    paint(); renderTable(); cpLayerS.value=lk; cpRefresh();
+    return;
   }
   BR=breaks();
   fillDistricts(); paint(); renderTable(); if(sel) renderDetail();
@@ -2837,11 +2917,14 @@ function mkGeoBreaks(key){
   return Array.from({length:n-1},(_,i)=>vals[Math.min((i+1)*step, vals.length-1)]);
 }
 function mkGeoFillResolved(val, breaks, rev, cs){
-  if(val==null||isNaN(val)) return cs.getPropertyValue('--nodata').trim()||'#dddddd';
+  /* cs may be a CSSStyleDeclaration or a hex ramp array (RAMP_HEX entry) */
+  const isArr=Array.isArray(cs);
+  if(val==null||isNaN(val)) return isArr?'#dddddd':(cs.getPropertyValue('--nodata').trim()||'#dddddd');
   let b=0;
   for(;b<breaks.length;b++) if(val<=breaks[b]) break;
   if(rev) b=breaks.length-b;
-  return cs.getPropertyValue(RAMP[Math.min(Math.max(b,0),RAMP.length-1)]).trim()||'#cccccc';
+  b=Math.min(Math.max(b,0),RAMP.length-1);
+  return isArr?(cs[Math.min(b,cs.length-1)]||'#cccccc'):(cs.getPropertyValue(RAMP[b]).trim()||'#cccccc');
 }
 function mkGeoFill(val, breaks, rev){
   if(val==null||isNaN(val)) return 'var(--nodata)';
