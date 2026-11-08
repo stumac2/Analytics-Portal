@@ -2061,6 +2061,19 @@ const REF_TILES={
 };
 
 const refState={labels:false,hillshade:false,contour:false,buildings:false,districts:true};
+/* Building footprints only exist in the tiles from zoom 13 — tell the user to zoom in */
+const BUILDING_MINZOOM=13;
+function updateBuildingHint(){
+  const cb=document.querySelector('input[data-ref="buildings"]'); if(!cb) return;
+  const lbl=cb.closest('label'); if(!lbl) return;
+  let h=lbl.querySelector('.ref-hint');
+  if(!h){ h=document.createElement('span'); h.className='ref-hint'; h.style.cssText='margin-left:6px;font-size:11px;color:var(--ink-3)'; lbl.appendChild(h); }
+  const z=(typeof map!=='undefined'&&map&&map.getZoom)?map.getZoom():0;
+  const show=refState.buildings&&z<BUILDING_MINZOOM;
+  h.textContent=show?'zoom in to see':''; h.hidden=!show;
+  h.title=show?'Buildings appear from zoom '+BUILDING_MINZOOM+' (street level)':'';
+}
+try{ map.on('zoomend',updateBuildingHint); }catch(_){}
 
 function toggleRefLayer(key,on){
   refState[key]=on;
@@ -2083,20 +2096,20 @@ function toggleRefLayer(key,on){
       if(!map.getSource(bSrc)){
         map.addSource(bSrc,{
           type:'vector',
-          tiles:['https://tiles.openfreemap.org/planet/{z}/{x}/{y}.pbf'],
+          tiles:['https://tiles.openfreemap.org/planet/latest/{z}/{x}/{y}.pbf'],
           maxzoom:14,
           attribution:'&copy; OpenFreeMap &copy; OpenStreetMap'
         });
       }
       if(!map.getLayer(bFill)){
         map.addLayer({id:bFill,type:'fill',source:bSrc,'source-layer':'building',
-          minzoom:13,
+          minzoom:BUILDING_MINZOOM,
           paint:{'fill-color':'#d4a574','fill-opacity':0.45}
         });
       }
       if(!map.getLayer(bLine)){
         map.addLayer({id:bLine,type:'line',source:bSrc,'source-layer':'building',
-          minzoom:13,
+          minzoom:BUILDING_MINZOOM,
           paint:{'line-color':'#a07040','line-width':0.5,'line-opacity':0.7}
         });
       }
@@ -2106,6 +2119,7 @@ function toggleRefLayer(key,on){
       if(map.getLayer(bFill)) map.setLayoutProperty(bFill,'visibility','none');
       if(map.getLayer(bLine)) map.setLayoutProperty(bLine,'visibility','none');
     }
+    updateBuildingHint();
     return;
   }
   /* Raster overlays (hillshade) */
@@ -2357,7 +2371,7 @@ function removeNativeLabels(){
 (function probeRefTiles(){
   /* Probe OpenFreeMap buildings vector tiles (don't disable — just flag) */
   {
-    const bUrl='https://tiles.openfreemap.org/planet/5/25/15.pbf';
+    const bUrl='https://tiles.openfreemap.org/planet/latest/13/6458/3963.pbf';
     fetch(bUrl,{method:'HEAD',mode:'no-cors'}).catch(()=>{
       window._buildingTilesBlocked=true;
     });
