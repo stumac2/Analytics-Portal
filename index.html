@@ -110,7 +110,7 @@ select,input[type="search"]{font:inherit;font-size:13px;background:var(--panel);
 .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
 .maprow{display:grid;grid-template-columns:212px minmax(0,1fr);gap:14px;align-items:start}
 @media (max-width:860px){.maprow{grid-template-columns:minmax(0,1fr)}}
-.sidebar-col{display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 70px);overflow:hidden}
+.sidebar-col{display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 70px);overflow:hidden;position:relative}
 .mapcol-wrap{display:flex;flex-direction:column;gap:16px;min-width:0}
 .lp{padding:8px;min-height:0}
 #lpanel{flex:1 1 0;overflow-y:auto}
@@ -755,28 +755,34 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .flag{font-size:9.5px;font-family:var(--display);font-weight:600;letter-spacing:.03em;color:var(--warn);background:var(--warn-bg);border-radius:3px;padding:1px 4px;margin-left:5px;white-space:nowrap}
 .lp .flag{font-size:9px;letter-spacing:.03em;padding:1px 3px;margin-left:auto;flex:0 0 auto}
 .empty{color:var(--ink-3);font-size:13.5px}
-/* --- Resolution picker --- */
-.res-pick{position:relative;display:inline-block}
-.res-btn{background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:3px 8px;
-  cursor:pointer;font:inherit;font-family:var(--display);font-size:10px;font-weight:600;
-  color:var(--ink-2);display:inline-flex;align-items:center;gap:4px;letter-spacing:.02em}
-.res-btn:hover{color:var(--ink);border-color:var(--ink-3)}
-.res-btn svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2}
-.res-pop{display:none;position:absolute;top:100%;left:0;z-index:20;margin-top:4px;
-  background:var(--panel);border:1px solid var(--line);border-radius:8px;
-  box-shadow:0 4px 16px rgba(0,0,0,.12);padding:8px 0;min-width:180px;max-width:240px}
-.res-pop.open{display:block}
-.res-pop-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;
-  color:var(--ink-3);padding:2px 12px 6px;text-transform:uppercase;border-bottom:1px solid var(--line-2);margin-bottom:4px}
-.res-pop-name{font-size:11.5px;font-weight:600;color:var(--ink);padding:4px 12px;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.res-pop-opts{display:flex;gap:4px;padding:6px 12px}
-.res-opt{flex:1;text-align:center;font-family:var(--display);font-size:10px;font-weight:700;
-  letter-spacing:.04em;padding:5px 4px;border-radius:5px;cursor:pointer;border:1px solid transparent;transition:all .12s}
-.res-opt.ok{color:var(--accent);background:var(--accent-soft)}
-.res-opt.ok:hover{border-color:var(--accent)}
-.res-opt.on{background:var(--accent);color:#fff}
-.res-opt.na{color:var(--ink-3);opacity:.35;cursor:default;background:var(--line-2)}
+/* --- Geography slide-out panel --- */
+.geo-panel{position:absolute;top:0;right:-90px;width:86px;height:100%;
+  background:var(--panel);border:1px solid var(--line);border-radius:0 8px 8px 0;
+  box-shadow:2px 0 8px rgba(0,0,0,.06);z-index:3;display:none;flex-direction:column;overflow:hidden}
+.geo-panel.open{display:flex}
+.geo-panel-hdr{display:flex;justify-content:center;gap:0;padding:4px 2px 3px;
+  border-bottom:1px solid var(--line-2);flex:0 0 auto}
+.geo-col-h{font-family:var(--display);font-size:8.5px;font-weight:700;letter-spacing:.04em;
+  color:var(--ink-3);text-align:center;width:26px;padding:2px 0}
+.geo-panel-body{flex:1 1 0;overflow-y:auto;padding:2px 0;scrollbar-width:none}
+.geo-panel-body::-webkit-scrollbar{display:none}
+.geo-sect{padding:0}
+.geo-sect-gap{height:24px}
+.geo-grp-gap{height:4px}
+.geo-row{display:flex;justify-content:center;gap:0;height:22px;align-items:center}
+.geo-cb{width:26px;display:flex;justify-content:center;align-items:center;cursor:pointer}
+.geo-cb-box{width:14px;height:14px;border:1.5px solid var(--line);border-radius:3px;
+  background:var(--panel);transition:all .12s}
+.geo-cb.ok .geo-cb-box{border-color:var(--accent-mute,var(--ink-3))}
+.geo-cb.ok:hover .geo-cb-box{border-color:var(--accent);background:var(--accent-soft)}
+.geo-cb.on .geo-cb-box{background:var(--ink-2);border-color:var(--ink-2)}
+.geo-cb.na{cursor:default;opacity:.2}
+.geo-trig{position:absolute;top:4px;right:4px;z-index:4;background:var(--panel);border:1px solid var(--line);
+  border-radius:4px;padding:2px 4px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  width:20px;height:20px;color:var(--ink-3)}
+.geo-trig:hover{color:var(--ink);border-color:var(--ink-3)}
+.geo-trig svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2}
+.geo-trig.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
 
 .tbl-wrap{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:620px}
@@ -996,15 +1002,12 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
  <div class="maprow">
   <div class="sidebar-col">
   <aside class="card lp" id="lpanel" aria-label="Map layer">
-    <div id="resPick" class="res-pick" style="position:absolute;top:6px;right:6px;z-index:3">
-      <button type="button" class="res-btn" id="resBtn"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg><span id="resGeo">DIST</span></button>
-      <div class="res-pop" id="resPop">
-        <div class="res-pop-h">Resolution</div>
-        <div class="res-pop-name" id="resLayerName">—</div>
-        <div class="res-pop-opts" id="resOpts"></div>
-      </div>
-    </div>
+    <button type="button" class="geo-trig" id="geoTrig" title="Show resolution matrix"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></button>
   </aside>
+  <div class="geo-panel" id="geoPanel">
+    <div class="geo-panel-hdr"><div class="geo-col-h">MK</div><div class="geo-col-h">DIST</div><div class="geo-col-h">ST</div></div>
+    <div class="geo-panel-body" id="geoPanelBody"></div>
+  </div>
   <aside class="card lp" id="myProj" aria-label="My project"></aside>
   </div>
   <div class="mapcol-wrap">
@@ -4742,87 +4745,126 @@ const lp=document.getElementById('lpanel');
   if(cfcDet) cfcDet.addEventListener('toggle',()=>{ if(cfcDet.open){ accordionClose(cfcDet); switchProject('cfc'); } });
   /* No auto-open — user must explicitly select a project */
 })();
-/* ---------- Resolution picker ---------- */
-(function initResPicker(){
-  const resBtn=document.getElementById('resBtn');
-  const resPop=document.getElementById('resPop');
-  const resOpts=document.getElementById('resOpts');
-  const resName=document.getElementById('resLayerName');
-  const resGeo=document.getElementById('resGeo');
-  if(!resBtn||!resPop)return;
-  /* toggle popover */
-  resBtn.addEventListener('click',e=>{
-    e.stopPropagation();
-    resPop.classList.toggle('open');
-    if(resPop.classList.contains('open')) updateResPicker();
+/* ---------- Geography slide-out panel ---------- */
+(function initGeoPanel(){
+  const geoTrig=document.getElementById('geoTrig');
+  const geoPanel=document.getElementById('geoPanel');
+  const geoPanelBody=document.getElementById('geoPanelBody');
+  if(!geoTrig||!geoPanel||!geoPanelBody)return;
+  geoTrig.addEventListener('click',()=>{
+    const open=geoPanel.classList.toggle('open');
+    geoTrig.classList.toggle('active',open);
+    if(open) buildGeoMatrix();
   });
-  document.addEventListener('click',()=>resPop.classList.remove('open'));
-  resPop.addEventListener('click',e=>e.stopPropagation());
-  /* determine what resolutions the current layer supports */
-  function getLayerRes(){
-    /* returns {name, resolutions:[{geo,available}]} */
-    const res=[{geo:'state',ok:false},{geo:'district',ok:false},{geo:'mukim',ok:false}];
-    let name='—';
-    if(activeProject==='demo' && layerChosen){
-      /* district-level demo layer */
-      const dl=DLAYERS.find(l=>l.k===demoLayer);
-      if(dl){ name=dl.label; res[1].ok=true; }
-      /* check if mukim version exists */
-      if(typeof MKDLAYERS!=='undefined'){
-        const mk=MKDLAYERS.find(l=>l.k===demoLayer);
-        if(mk) res[2].ok=true;
-      }
-    } else if(geoMode==='mukim' && layerChosen){
-      /* mukim layer */
-      if(typeof MKLAYERS!=='undefined' && MKLAYERS[mkLayerKey]){
-        name=MKLAYERS[mkLayerKey].label; res[2].ok=true;
-      } else if(typeof MKRPI_LAYERS!=='undefined' && MKRPI_LAYERS[mkLayerKey]){
-        name=MKRPI_LAYERS[mkLayerKey].label; res[2].ok=true;
-      } else if(typeof MKDLAYERS!=='undefined'){
-        const mk=MKDLAYERS.find(l=>l.k===mkLayerKey);
-        if(mk){ name=mk.label; res[2].ok=true; }
-      }
-    } else if(activeProject==='rpi' && layerChosen){
-      if(indKey){
-        /* indicator — find it in M.meta */
-        for(const dom of ['Social','Economic','Physical','Climate']){
-          const found=M.meta[dom].find(([key])=>M.pref[dom]+key===indKey);
-          if(found){ name=found[1]; res[0].ok=true; res[1].ok=!found[2]; break; }
-        }
+  /* sync scroll with sidebar */
+  const lp=document.getElementById('lpanel');
+  if(lp) lp.addEventListener('scroll',()=>{ geoPanelBody.scrollTop=lp.scrollTop; });
+  /* build the resolution matrix rows to match the sidebar structure */
+  function buildGeoMatrix(){
+    const rows=[];
+    /* scan all buttons in lpanel to build matching rows */
+    const buttons=lp.querySelectorAll('button[data-demo], button[data-mk], button[data-k], button[data-ind]');
+    const headers=lp.querySelectorAll('details.hdr');
+    /* simpler approach: iterate through sidebar elements in DOM order */
+    const allEls=lp.querySelectorAll('details.hdr, .cat-h, button[data-demo], button[data-mk], button[data-k], button[data-ind]');
+    let h='';
+    allEls.forEach(el=>{
+      if(el.matches('details.hdr')){
+        /* section header — add gap spacer */
+        h+=`<div class="geo-sect-gap"></div>`;
+      } else if(el.matches('.cat-h')){
+        /* category subheader — small gap */
+        h+=`<div class="geo-grp-gap"></div>`;
       } else {
-        /* composite or domain */
-        const composites={RPI_core:'Composite index',Capacity:'Capacity',Vulnerability:'Vulnerability',
-          Social:'Social',Economic:'Economic',Physical:'Physical',Climate:'Climate'};
-        name=composites[layer]||layer;
-        res[0].ok=true; res[1].ok=true;
+        /* layer button — determine resolution availability */
+        let mk=false, dist=false, st=false;
+        let layerType='', layerKey='';
+        if(el.dataset.demo){
+          layerType='demo'; layerKey=el.dataset.demo;
+          dist=true; /* DLAYERS are district */
+          /* check if mukim version exists */
+          if(typeof MKDLAYERS!=='undefined' && MKDLAYERS.find(l=>l.k===layerKey)) mk=true;
+        } else if(el.dataset.mk){
+          layerType='mk'; layerKey=el.dataset.mk;
+          mk=true; /* mukim-only */
+        } else if(el.dataset.k){
+          layerType='k'; layerKey=el.dataset.k;
+          st=true; dist=true; /* composites/domains: state + district */
+        } else if(el.dataset.ind){
+          layerType='ind'; layerKey=el.dataset.ind;
+          st=true; /* all indicators have state */
+          /* check if district-level (isState=false means district available) */
+          for(const dom of ['Social','Economic','Physical','Climate']){
+            const found=M.meta[dom].find(([key])=>M.pref[dom]+key===layerKey);
+            if(found){ dist=!found[2]; break; }
+          }
+        }
+        const mkCls=mk?'geo-cb ok':'geo-cb na';
+        const dCls=dist?'geo-cb ok':'geo-cb na';
+        const stCls=st?'geo-cb ok':'geo-cb na';
+        /* mark current active */
+        const isActive=el.getAttribute('aria-current')==='true';
+        h+=`<div class="geo-row">`+
+           `<div class="${mkCls}${mk&&geoMode==='mukim'&&isActive?' on':''}" data-gt="mukim" data-lt="${layerType}" data-lk="${layerKey}"><div class="geo-cb-box"></div></div>`+
+           `<div class="${dCls}${dist&&geoMode==='district'&&isActive?' on':''}" data-gt="district" data-lt="${layerType}" data-lk="${layerKey}"><div class="geo-cb-box"></div></div>`+
+           `<div class="${stCls}${st&&geoMode==='state'&&isActive?' on':''}" data-gt="state" data-lt="${layerType}" data-lk="${layerKey}"><div class="geo-cb-box"></div></div>`+
+           `</div>`;
       }
+    });
+    geoPanelBody.innerHTML=h;
+    geoPanelBody.scrollTop=lp.scrollTop;
+  }
+  /* handle click on a geo checkbox */
+  geoPanelBody.addEventListener('click',e=>{
+    const cb=e.target.closest('.geo-cb.ok');
+    if(!cb)return;
+    const tGeo=cb.dataset.gt;
+    const lType=cb.dataset.lt;
+    const lKey=cb.dataset.lk;
+    /* activate the layer at the chosen resolution */
+    if(lType==='demo'){
+      demoLayer=lKey;
+      if(activeProject!=='demo'){activeProject='demo';markActiveProject('demo');}
+      layerChosen=true;
+      /* find and click the matching sidebar button to sync state */
+      const btn=lp.querySelector(`button[data-demo="${lKey}"]`);
+      if(btn){ lp.querySelectorAll('button[aria-current]').forEach(x=>x.removeAttribute('aria-current')); btn.setAttribute('aria-current','true'); }
+      if(tGeo!==geoMode && (tGeo==='district'||tGeo==='state')) setGeoMode(tGeo);
+      else { paint(); renderTable(); }
+      renderProjectLayerInfo('demo');
+      if(sel) renderDemoDetail();
+    } else if(lType==='mk'){
+      mkLayerKey=lKey;
+      if(mkLayerSel) mkLayerSel.value=lKey;
+      layerChosen=true;
+      vRaw.disabled=true; rawMode=false; setVToggle();
+      const btn=lp.querySelector(`button[data-mk="${lKey}"]`);
+      if(btn){ lp.querySelectorAll('button[aria-current]').forEach(x=>x.removeAttribute('aria-current')); btn.setAttribute('aria-current','true'); }
+      if(geoMode!=='mukim') setGeoMode('mukim'); else { paint(); renderTable(); }
+    } else if(lType==='ind'){
+      indKey=lKey;
+      if(activeProject!=='rpi'){activateRpi();markActiveProject('rpi');}
+      layerChosen=true;
+      vRaw.disabled=false;
+      const btn=lp.querySelector(`button[data-ind="${lKey}"]`);
+      if(btn){ lp.querySelectorAll('button[aria-current]').forEach(x=>x.removeAttribute('aria-current')); btn.setAttribute('aria-current','true'); }
+      if(tGeo!==geoMode) setGeoMode(tGeo);
+      else { paint(); renderTable(); if(sel) renderDetail(); }
+    } else if(lType==='k'){
+      indKey=null; layer=lKey;
+      if(activeProject!=='rpi'){activateRpi();markActiveProject('rpi');}
+      layerChosen=true;
+      vRaw.disabled=true; rawMode=false; setVToggle();
+      const btn=lp.querySelector(`button[data-k="${lKey}"]`);
+      if(btn){ lp.querySelectorAll('button[aria-current]').forEach(x=>x.removeAttribute('aria-current')); btn.setAttribute('aria-current','true'); }
+      if(tGeo!==geoMode) setGeoMode(tGeo);
+      else { paint(); renderTable(); if(sel) renderDetail(); }
     }
-    return {name,res};
-  }
-  function updateResPicker(){
-    const {name,res}=getLayerRes();
-    resName.textContent=name;
-    resGeo.textContent=geoMode==='state'?'STATE':geoMode==='district'?'DIST':'MUKIM';
-    resOpts.innerHTML=res.map(r=>{
-      const label=r.geo==='state'?'STATE':r.geo==='district'?'DIST':'MUKIM';
-      const cls=r.ok?(r.geo===geoMode?'res-opt ok on':'res-opt ok'):'res-opt na';
-      return `<div class="${cls}" data-rg="${r.geo}">${label}</div>`;
-    }).join('');
-  }
-  /* click resolution option */
-  resOpts.addEventListener('click',e=>{
-    const opt=e.target.closest('.res-opt.ok');
-    if(!opt)return;
-    const tg=opt.dataset.rg;
-    if(tg===geoMode)return;
-    setGeoMode(tg);
-    resPop.classList.remove('open');
-    updateResPicker();
+    /* rebuild to update active states */
+    buildGeoMatrix();
   });
-  /* keep label in sync — update whenever popover opens or geoMode buttons are clicked */
-  document.getElementById('geoTog').addEventListener('click',()=>{
-    setTimeout(()=>{ resGeo.textContent=geoMode==='state'?'STATE':geoMode==='district'?'DIST':'MUKIM'; },50);
-  });
+  /* rebuild when sidebar accordion changes */
+  lp.addEventListener('toggle',()=>{ if(geoPanel.classList.contains('open')) setTimeout(buildGeoMatrix,20); },true);
 })();
 let activeProject=null;
 /* Method card starts hidden via inline style="display:none" in HTML */
