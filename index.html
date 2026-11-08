@@ -108,7 +108,8 @@ select,input[type="search"]{font:inherit;font-size:13px;background:var(--panel);
 .spacer{flex:1 1 auto}
 
 .grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
-.maprow{display:grid;grid-template-columns:212px minmax(0,1fr);gap:14px;align-items:start;position:relative}
+.maprow{display:grid;grid-template-columns:212px minmax(0,1fr);gap:14px;align-items:start}
+.sidebar-wrap{position:relative}
 @media (max-width:860px){.maprow{grid-template-columns:minmax(0,1fr)}}
 .sidebar-col{display:flex;flex-direction:column;gap:14px;max-height:calc(100vh - 70px);overflow:hidden}
 .mapcol-wrap{display:flex;flex-direction:column;gap:16px;min-width:0}
@@ -756,7 +757,7 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .lp .flag{font-size:9px;letter-spacing:.03em;padding:1px 3px;margin-left:auto;flex:0 0 auto}
 .empty{color:var(--ink-3);font-size:13.5px}
 /* --- Geography slide-out panel --- */
-.geo-panel{position:absolute;top:0;left:212px;width:86px;height:100%;
+.geo-panel{position:absolute;top:0;left:100%;width:86px;height:100%;
   background:var(--panel);border:1px solid var(--line);border-radius:0 8px 8px 0;
   box-shadow:2px 0 8px rgba(0,0,0,.06);z-index:10;display:none;flex-direction:column;overflow:hidden}
 .geo-panel.open{display:flex}
@@ -1000,6 +1001,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
 
 <div class="grid">
  <div class="maprow">
+  <div class="sidebar-wrap">
   <div class="sidebar-col">
   <aside class="card lp" id="lpanel" aria-label="Map layer">
     <button type="button" class="geo-trig" id="geoTrig" title="Show resolution matrix"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg></button>
@@ -1009,6 +1011,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
   <div class="geo-panel" id="geoPanel">
     <div class="geo-panel-hdr"><div class="geo-col-h">MK</div><div class="geo-col-h">DIST</div><div class="geo-col-h">ST</div></div>
     <div class="geo-panel-body" id="geoPanelBody"></div>
+  </div>
   </div>
   <div class="mapcol-wrap">
   <div class="card mapbox">
