@@ -814,6 +814,45 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .gc.pend{cursor:help}.gc.pend i{border:1.75px dotted var(--ink-3);opacity:.5}
 .gclegend i.m{border-style:dotted;border-width:2px}
 .lstrw{display:flex;align-items:center;min-width:0}.lp .lstrw .lst-stub{flex:1 1 auto;width:auto;min-width:0}
+
+.camenu[hidden],.isop[hidden]{display:none!important}
+.camenu{position:absolute;inset:0;z-index:8;background:var(--panel);border-radius:8px;padding:18px;overflow:auto}
+.camenu .cam-h{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:16px}
+.camenu .cam-k{font-family:var(--display);font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--accent)}
+.camenu h3{margin:2px 0 0;font-family:var(--display);font-size:20px;color:var(--ink)}
+.camenu .cam-x{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer}
+.camenu .cam-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;max-width:760px}
+.camenu .cam-card{display:flex;flex-direction:column;gap:6px;text-align:left;padding:16px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);cursor:pointer;font:inherit}
+.camenu .cam-card:hover{border-color:var(--accent);background:var(--accent-soft)}
+.camenu .cam-card b{font-family:var(--display);font-size:15px}
+.camenu .cam-card span{font-size:12.5px;line-height:1.45;color:var(--ink-2)}
+.isop{position:absolute;top:10px;left:10px;bottom:10px;width:340px;max-width:calc(100% - 20px);z-index:7;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.16);overflow:auto;padding:10px 12px 12px;font-size:12px;color:var(--ink)}
+.isop .isop-h{display:flex;align-items:center;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--line-2);margin-bottom:8px}
+.isop .isop-h b{font-family:var(--display);font-size:14px}
+.isop button{font:inherit;cursor:pointer}
+.isop .isop-h button,.isop .isop-b,.isop .isop-act button{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 9px;font-size:12px}
+.isop .isop-b{width:100%;margin-top:6px}
+.isop .isop-b:disabled{opacity:.45;cursor:not-allowed}
+.isop .isop-s{margin-bottom:10px}
+.isop .isop-l{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-bottom:4px}
+.isop .isop-hint{font-size:12px;color:var(--ink-2);line-height:1.4}
+.isop .isop-hint.warn{color:var(--warn)}
+.isop .isop-note{font-size:10.5px;color:var(--ink-3);line-height:1.4;padding-top:4px}
+.isop .isop-seg{display:flex;gap:4px}
+.isop .isop-seg button,.isop .isop-chips button{flex:1 1 0;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:6px 4px;font-weight:600}
+.isop .isop-chips{display:flex;gap:4px;flex-wrap:wrap}
+.isop .isop-chips button{flex:0 0 auto;min-width:40px}
+.isop .isop-seg button.on,.isop .isop-chips button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.isop .isop-card{border-top:1px solid var(--line-2);padding-top:10px}
+.isop .isop-ct{font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-2);padding-bottom:6px}
+.isop table{width:100%;border-collapse:collapse;font-size:11.5px}
+.isop th,.isop td{padding:4px 4px;text-align:right;border-bottom:1px solid var(--line-2)}
+.isop th:first-child,.isop td:first-child{text-align:left;color:var(--ink-2)}
+.isop th{font-family:var(--display);font-size:10.5px;color:var(--ink)}
+.isop th i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.isop tr.pop td{font-weight:700;color:var(--ink)}
+.isop tr.sec td{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-top:8px;text-align:left}
+.isop .isop-act{display:flex;gap:6px;padding:10px 0 4px}
 .hexpick{display:none;padding:2px 8px 8px;border-bottom:1px solid var(--line-2);margin-bottom:4px}
 .geo-open .hexpick{display:block}
 .hexpick .hp-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:4px 0}
@@ -3363,6 +3402,7 @@ map.on('load',()=>{
 
   /* Click: mukim layer */
   map.on('click','mukim-fill',e=>{
+    if(window.ISO_ON) return;
     if(!e.features||!e.features.length) return;
     const nm=e.features[0].properties.n;
     if(mkComparing && selMukim && nm!==selMukim){
@@ -3387,6 +3427,7 @@ map.on('load',()=>{
 
   /* Click: state layer */
   map.on('click','state-fill',e=>{
+    if(window.ISO_ON) return;
     if(!e.features||!e.features.length) return;
     const st=e.features[0].properties.state;
     stateF=st; sel=st;
@@ -3403,6 +3444,7 @@ map.on('load',()=>{
 
   /* Click: district layer */
   map.on('click','district-fill',e=>{
+    if(window.ISO_ON) return;
     if(!e.features||!e.features.length) return;
     const code=e.features[0].properties.code_state_district;
     if(!code) return;
@@ -6895,8 +6937,9 @@ let MCA_ON=false;          /* analysis mode active */
   }
   if(modeTogBtns) modeTogBtns.addEventListener('click',e=>{
     const b=e.target.closest('button[data-mode]'); if(!b) return;
-    if(b.dataset.mode==='analysis'){ setMode(true); return; }
+    if(b.dataset.mode==='analysis'){ showMenu(); return; }
     /* Explorer returns the portal to its default blank state */
+    if(window.ISO_ON) isoLeave(); menu.hidden=true;
     modeTogBtns.querySelectorAll('button').forEach(x=>
       x.setAttribute('aria-pressed',String(x.dataset.mode==='explorer')));
     if(typeof resetMap==='function') resetMap(); else setMode(false);
@@ -6907,9 +6950,209 @@ let MCA_ON=false;          /* analysis mode active */
     _origSwitch2(proj);
     if(modeTog) modeTog.style.display='';
     if(MCA_ON) setMode(false);
+    if(window.ISO_ON) isoLeave();
+    menu.hidden=true;
   };
 
-  window.__mcaExit=()=>{ if(MCA_ON) setMode(false); };
+  /* ---------- Custom Analysis menu + Isochrone mapping ---------- */
+  window.ISO_ON=false;
+  const ISO={pt:null,mode:'walk',times:new Set([5,10,15]),seq:0,timer:null,marker:null,fc:null,stats:null,layersOk:false,busy:false};
+  const ISO_TIMES={walk:[5,10,15,20,30],bike:[5,10,15,20,30],drive:[5,10,15,20,30,45]};
+  const ISO_MODES={walk:{label:'Walk',costing:'pedestrian',speed:'about 5 km/h on footways and roads'},
+                   bike:{label:'Cycle',costing:'bicycle',speed:'about 16 km/h, avoids steep and busy roads'},
+                   drive:{label:'Drive',costing:'auto',speed:'OSM road classes and speed limits, no live traffic'}};
+  const ISO_COLS=['#a8e6d6','#5fcfb0','#20a98a','#0b8068','#075d4d','#04403a'];
+  const ISO_GROUPS=['hx_health','hx_education','hx_community','hx_shops','hx_finance','hx_transport','hx_emergency'];
+  /* engine adapter: swap this object to move to a self-hosted Valhalla / ORS without touching the UI */
+  const ISO_ENGINE={
+    name:'Valhalla (public OSM instance)',
+    async fetch(pt,mode,times){
+      const J={locations:[{lat:pt[1],lon:pt[0]}],costing:ISO_MODES[mode].costing,contours:times.map(t=>({time:t})),polygons:true,denoise:0.3,generalize:60};
+      const r=await fetch('https://valhalla1.openstreetmap.de/isochrone?json='+encodeURIComponent(JSON.stringify(J)));
+      let j=null; try{ j=await r.json(); }catch(_){}
+      if(!r.ok||!j||!j.features){
+        const msg=j&&j.error?String(j.error):('HTTP '+r.status);
+        const e=new Error(msg); e.noRoad=/edges|location|route/i.test(msg); throw e;
+      }
+      return {type:'FeatureCollection',features:j.features.filter(f=>f.geometry&&/Polygon/.test(f.geometry.type)).map(f=>({type:'Feature',geometry:f.geometry,properties:{minutes:f.properties.contour}}))};
+    }};
+
+  const menu=document.createElement('div'); menu.className='camenu'; menu.hidden=true;
+  menu.innerHTML='<div class="cam-h"><div><div class="cam-k">Custom Analysis</div><h3>Choose a tool</h3></div><button type="button" class="cam-x" data-ca="close">Close</button></div>'+
+    '<div class="cam-grid">'+
+    '<button type="button" class="cam-card" data-ca="mca"><b>Multi Criteria Analysis</b><span>Choose indicators, set weights and rank districts or mukims for a question you define.</span></button>'+
+    '<button type="button" class="cam-card" data-ca="iso"><b>Isochrone Mapping</b><span>Drop a pin or use a district centroid, pick a travel mode and time, and see the area reachable with the population and facilities inside it.</span></button>'+
+    '</div>';
+  host.appendChild(menu);
+
+  const isop=document.createElement('div'); isop.className='isop'; isop.hidden=true;
+  isop.innerHTML='<div class="isop-h"><button type="button" data-iso="back">&larr; Tools</button><b>Isochrone mapping</b></div>'+
+    '<div class="isop-s"><div class="isop-l">Origin</div><div class="isop-hint" id="isoHint">Click the map to drop a pin. Drag the pin to move it.</div>'+
+    '<button type="button" class="isop-b" data-iso="dist" id="isoDistBtn">Use selected district centroid</button></div>'+
+    '<div class="isop-s"><div class="isop-l">Travel mode</div><div class="isop-seg" id="isoMode"></div><div class="isop-note" id="isoModeNote"></div></div>'+
+    '<div class="isop-s"><div class="isop-l">Travel time (minutes)</div><div class="isop-chips" id="isoTimes"></div></div>'+
+    '<div id="isoRes"></div>';
+  host.appendChild(isop);
+  const $iso=id=>isop.querySelector('#'+id);
+
+  function isoBuildControls(){
+    $iso('isoMode').innerHTML=Object.keys(ISO_MODES).map(m=>`<button type="button" data-mode="${m}" class="${ISO.mode===m?'on':''}">${ISO_MODES[m].label}</button>`).join('');
+    $iso('isoModeNote').textContent=ISO_MODES[ISO.mode].speed;
+    $iso('isoTimes').innerHTML=ISO_TIMES[ISO.mode].map(t=>`<button type="button" data-t="${t}" class="${ISO.times.has(t)?'on':''}">${t}</button>`).join('');
+  }
+  function isoDistrictState(){
+    const b=$iso('isoDistBtn'), code=ds&&ds.value;
+    const row=code&&rows.find(r=>r.code===code);
+    b.textContent=row?('Use '+row.name+' centroid'):'Use selected district centroid';
+    b.disabled=!row;
+    b.title=row?'':'Pick a district in the District filter first';
+  }
+  function distCentroid(code){
+    const f=distFC.features.find(x=>x.properties.code_state_district===code); if(!f) return null;
+    const g=f.geometry, P=g.type==='Polygon'?[g.coordinates]:g.coordinates; let best=null,ba=0;
+    for(const poly of P){ const r=poly[0]; let a=0,cx=0,cy=0;
+      for(let i=0;i<r.length-1;i++){ const c=r[i][0]*r[i+1][1]-r[i+1][0]*r[i][1]; a+=c; cx+=(r[i][0]+r[i+1][0])*c; cy+=(r[i][1]+r[i+1][1])*c; }
+      a/=2; if(a&&Math.abs(a)>ba){ ba=Math.abs(a); best=[cx/(6*a),cy/(6*a)]; } }
+    if(best) return best;
+    const b=BB[code]; return b?[(b.x0+b.x1)/2,(b.y0+b.y1)/2]:null;
+  }
+  function isoLayers(){
+    if(ISO.layersOk&&map.getSource('iso-bands')) return;
+    map.addSource('iso-bands',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'iso-fill',type:'fill',source:'iso-bands',paint:{'fill-color':['get','c'],'fill-opacity':0.4}});
+    map.addLayer({id:'iso-line',type:'line',source:'iso-bands',paint:{'line-color':['get','c'],'line-width':1.6}});
+    ISO.layersOk=true;
+  }
+  function isoSetData(fc){ try{ map.getSource('iso-bands').setData(fc||{type:'FeatureCollection',features:[]}); }catch(_){} }
+  function isoPlace(pt){
+    ISO.pt=pt;
+    if(!ISO.marker){
+      ISO.marker=new maplibregl.Marker({draggable:true,color:'#d6336c'}).setLngLat(pt).addTo(map);
+      ISO.marker.on('dragend',()=>{ const l=ISO.marker.getLngLat(); ISO.pt=[l.lng,l.lat]; isoSchedule(0); });
+    } else ISO.marker.setLngLat(pt);
+    isoSchedule(0);
+  }
+  function isoSchedule(ms){ clearTimeout(ISO.timer); ISO.timer=setTimeout(isoRun,ms==null?350:ms); }
+  const fmt=n=>n>=100?Math.round(n).toLocaleString():n>=10?n.toFixed(1):n.toFixed(2);
+  function ringKm2(r){ let s=0; for(let i=0;i<r.length-1;i++) s+=r[i][0]*r[i+1][1]-r[i+1][0]*r[i][1]; const lat=r.reduce((a,p)=>a+p[1],0)/r.length; return Math.abs(s)/2*110.57*111.32*Math.cos(lat*Math.PI/180); }
+  function polysOf(g){ return g.type==='Polygon'?[g.coordinates]:g.coordinates; }
+  function geomKm2(g){ let a=0; for(const p of polysOf(g)) p.forEach((r,i)=>{ a+=(i?-1:1)*ringKm2(r); }); return a; }
+  function isoStats(fc){
+    const G=hexPrep(), groups=ISO_GROUPS.map(k=>({k,d:hexDens(k)})), out=[];
+    for(const f of fc.features){
+      const area=geomKm2(f.geometry), res=area<120?9:area<1500?8:area<15000?7:6, ca=HEX_RES[res].km2;
+      let pop=0; const fac=groups.map(()=>0); let land=0;
+      for(const poly of polysOf(f.geometry)){
+        let cells=[]; try{ cells=h3.polygonToCells(poly,res,true); }catch(_){}
+        for(const c of cells){
+          const ll=h3.cellToLatLng(c), m=hexLocate(ll[1],ll[0]); if(m<0) continue;
+          land+=ca;
+          const row=MKRPI[G.names[m]]; if(row&&G.area[m]>0) pop+=ca*(row[33]||0)/G.area[m];
+          groups.forEach((g,i)=>{ fac[i]+=g.d[m]*ca; });
+        }
+      }
+      out.push({minutes:f.properties.minutes,area,land,pop,fac,res});
+    }
+    return out.sort((a,b)=>a.minutes-b.minutes);
+  }
+  function isoRender(){
+    const box=$iso('isoRes'), S=ISO.stats; if(!S||!S.length){ box.innerHTML=''; return; }
+    const head='<tr><th></th>'+S.map((s,i)=>`<th><i style="background:${ISO.cols[s.minutes]}"></i>${s.minutes} min</th>`).join('')+'</tr>';
+    const row=(l,vals,cls)=>`<tr class="${cls||''}"><td>${l}</td>${vals.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+    let t='<table>'+head+row('Area (km²)',S.map(s=>fmt(s.area)))+row('Population (est.)',S.map(s=>Math.round(s.pop).toLocaleString()),'pop');
+    t+='<tr class="sec"><td colspan="'+(S.length+1)+'">Facilities (est.)</td></tr>';
+    ISO_GROUPS.forEach((k,i)=>{ t+=row(HEX_GROUPS[k].label.replace(' facilities',''),S.map(s=>fmt(s.fac[i]))); });
+    t+='</table>';
+    box.innerHTML='<div class="isop-card"><div class="isop-ct">Reach from pin · '+ISO_MODES[ISO.mode].label.toLowerCase()+'</div>'+t+
+      '<div class="isop-act"><button type="button" data-iso="geojson">GeoJSON</button><button type="button" data-iso="csv">CSV</button><button type="button" data-iso="clear">Clear pin</button></div>'+
+      '<div class="isop-note">Routes: '+ISO_ENGINE.name+', built on OpenStreetMap. Population and facilities are estimated from mukim census density and OSM facility totals, assumed uniform inside each mukim, so treat them as indicative. Under-mapped areas (rural Sabah, Sarawak, Kelantan) understate roads and facilities.</div></div>';
+  }
+  async function isoRun(){
+    if(!ISO.pt||!window.ISO_ON) return;
+    const my=++ISO.seq, box=$iso('isoRes'), times=[...ISO.times].sort((a,b)=>a-b);
+    if(!times.length){ isoSetData(null); ISO.stats=null; box.innerHTML='<div class="isop-hint">Select at least one travel time.</div>'; return; }
+    box.innerHTML='<div class="isop-hint">Calculating…</div>';
+    try{
+      const fc=await ISO_ENGINE.fetch(ISO.pt,ISO.mode,times);
+      if(my!==ISO.seq) return;
+      ISO.cols={}; times.forEach((t,i)=>{ ISO.cols[t]=ISO_COLS[Math.min(i,ISO_COLS.length-1)]; });
+      fc.features.forEach(f=>{ f.properties.c=ISO.cols[f.properties.minutes]||ISO_COLS[0]; });
+      fc.features.sort((a,b)=>b.properties.minutes-a.properties.minutes);
+      isoLayers(); isoSetData(fc);
+      ISO.fc=fc; ISO.stats=isoStats(fc); isoRender();
+      let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+      polysOf(fc.features[0].geometry).forEach(p=>p[0].forEach(c=>{ x0=Math.min(x0,c[0]); x1=Math.max(x1,c[0]); y0=Math.min(y0,c[1]); y1=Math.max(y1,c[1]); }));
+      map.fitBounds([[x0,y0],[x1,y1]],{padding:{top:40,bottom:40,right:40,left:380},maxZoom:15,duration:600});
+    }catch(err){
+      if(my!==ISO.seq) return;
+      isoSetData(null); ISO.stats=null;
+      box.innerHTML='<div class="isop-hint warn">'+(err.noRoad?'No road found near this point. Drag the pin onto a road.':'The routing service did not respond. Try again in a moment.')+'</div>';
+    }
+  }
+  function isoSave(name,text,type){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },500); }
+  function isoDownload(kind){
+    if(!ISO.fc||!ISO.stats) return;
+    const byMin=Object.fromEntries(ISO.stats.map(s=>[s.minutes,s]));
+    if(kind==='geojson'){
+      const fc={type:'FeatureCollection',features:ISO.fc.features.map(f=>{ const s=byMin[f.properties.minutes];
+        return {type:'Feature',geometry:f.geometry,properties:{minutes:s.minutes,mode:ISO.mode,area_km2:+s.area.toFixed(3),population_est:Math.round(s.pop),...Object.fromEntries(ISO_GROUPS.map((k,i)=>[k.replace('hx_','fac_'),+s.fac[i].toFixed(2)]))}}; })};
+      isoSave('isochrones.geojson',JSON.stringify(fc),'application/geo+json');
+    } else {
+      const hdr=['minutes','mode','lon','lat','area_km2','population_est',...ISO_GROUPS.map(k=>k.replace('hx_','fac_')+'_est')];
+      const lines=[hdr.join(',')].concat(ISO.stats.map(s=>[s.minutes,ISO.mode,ISO.pt[0].toFixed(5),ISO.pt[1].toFixed(5),s.area.toFixed(3),Math.round(s.pop),...s.fac.map(v=>v.toFixed(2))].join(',')));
+      isoSave('isochrones.csv',lines.join('\n'),'text/csv');
+    }
+  }
+  function isoClear(){
+    ISO.seq++; clearTimeout(ISO.timer); ISO.pt=null; ISO.fc=null; ISO.stats=null;
+    if(ISO.marker){ ISO.marker.remove(); ISO.marker=null; }
+    isoSetData(null); $iso('isoRes').innerHTML='';
+  }
+  function isoMapClick(e){ if(window.ISO_ON&&!isop.hidden) isoPlace([e.lngLat.lng,e.lngLat.lat]); }
+  let isoPoll=null;
+  function isoEnter(){
+    menu.hidden=true; window.ISO_ON=true;
+    if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
+    if(typeof hexOn==='function'&&hexOn()) hexExit();
+    chrome(true);
+    const t=document.getElementById('mapTitle'); if(t) t.textContent='Isochrone mapping';
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity='0.4'; lpEl.style.pointerEvents='none'; }
+    isoLayers(); isoBuildControls(); isoDistrictState();
+    isop.hidden=false; map.getCanvas().style.cursor='crosshair';
+    if(!isoPoll){ map.on('click',isoMapClick); isoPoll=setInterval(isoDistrictState,600); }
+  }
+  function isoLeave(){
+    if(!window.ISO_ON) return;
+    window.ISO_ON=false; isoClear(); isop.hidden=true; map.getCanvas().style.cursor='';
+    if(isoPoll){ map.off('click',isoMapClick); clearInterval(isoPoll); isoPoll=null; }
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity=''; lpEl.style.pointerEvents=''; }
+    chrome(false); _origSwitch2(activeProject||'rpi'); markActiveProject(activeProject||'rpi');
+  }
+  function showMenu(){
+    if(window.ISO_ON) isoLeave();
+    if(MCA_ON) setMode(false);
+    if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
+    menu.hidden=false;
+  }
+  menu.addEventListener('click',e=>{
+    const b=e.target.closest('[data-ca]'); if(!b) return;
+    if(b.dataset.ca==='mca'){ menu.hidden=true; setMode(true); }
+    else if(b.dataset.ca==='iso') isoEnter();
+    else { menu.hidden=true; if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='explorer'))); }
+  });
+  isop.addEventListener('click',e=>{
+    const m=e.target.closest('#isoMode button'), t=e.target.closest('#isoTimes button'), a=e.target.closest('[data-iso]');
+    if(m){ ISO.mode=m.dataset.mode; ISO.times=new Set([...ISO.times].filter(x=>ISO_TIMES[ISO.mode].includes(x))); if(!ISO.times.size) ISO.times=new Set([5,10,15]); isoBuildControls(); if(ISO.pt) isoSchedule(); return; }
+    if(t){ const v=+t.dataset.t; ISO.times.has(v)?ISO.times.delete(v):ISO.times.add(v); isoBuildControls(); if(ISO.pt) isoSchedule(); return; }
+    if(!a) return;
+    const k=a.dataset.iso;
+    if(k==='back'){ isoLeave(); showMenu(); }
+    else if(k==='dist'){ const c=ds&&ds.value&&distCentroid(ds.value); if(c) isoPlace(c); }
+    else if(k==='clear') isoClear();
+    else isoDownload(k);
+  });
+
+  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(MCA_ON) setMode(false); };
   /* exposed for the download menu */
   window.__mcaState=()=>({scores:S.scores,level:S.level,extent:{...S.extent},
     crit:JSON.parse(JSON.stringify(S.crit)),order:S.order.slice(),
