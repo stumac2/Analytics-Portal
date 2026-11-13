@@ -791,6 +791,12 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .geo-open .lp-geotog{color:var(--accent);background:var(--accent-soft)}
 .gcells,.gchdr{display:flex;flex:0 0 auto;width:0;overflow:hidden;opacity:0;transition:width .25s ease,opacity .2s ease}
 .geo-open .gcells,.geo-open .gchdr{width:120px;opacity:1}
+.geo-open .gchdr{overflow:visible}
+.gchdr .hxh{position:relative}
+.gchdr .hxcaret{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:3px;width:22px;height:14px;padding:0;border:0;background:transparent;color:var(--ink-2);display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:4px}
+.gchdr .hxcaret:hover{background:var(--accent-soft);color:var(--ink)}
+.gchdr .hxcaret svg{transition:transform .2s}
+.gchdr .hxcaret[aria-expanded=true] svg{transform:rotate(180deg)}
 .gchdr span{width:30px;text-align:center;font-family:var(--display);font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--ink-2)}
 .lrow{display:flex;align-items:center;min-width:0}
 .lp .lrow .lbtn{flex:1 1 auto;width:auto;min-width:0}
@@ -854,7 +860,7 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .isop tr.sec td{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-top:8px;text-align:left}
 .isop .isop-act{display:flex;gap:6px;padding:10px 0 4px}
 .hexpick{display:none;padding:2px 8px 8px;border-bottom:1px solid var(--line-2);margin-bottom:4px}
-.geo-open .hexpick{display:block}
+.geo-open .hexpick.open{display:block}
 .hexpick .hp-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:4px 0}
 .lp .hexpick .hp-seg{display:flex;gap:4px}
 .lp .hexpick .hp-seg button{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:1px;width:auto;padding:5px 2px;border:1px solid var(--line);border-radius:6px;font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-2);background:var(--panel)}
@@ -5166,7 +5172,7 @@ function hexActivate(key){
   if(typeof h3==='undefined'){ hexHint('The H3 library did not load. Check your connection and reload the page.'); return; }
   HEX.entering=true;
   try{ if(activeProject!=='rpi') switchProject('rpi'); }finally{ HEX.entering=false; }
-  HEX.key=key; layerChosen=true;
+  HEX.key=key; layerChosen=true; hexPanelOpen(true);
   if(!HEX.on){
     HEX.on=true;
     HEX.saved={};
@@ -5287,8 +5293,15 @@ function hexBuildPick(){
     '<div class="hp-note" id="hexNote"></div></div>');
   const pick=document.getElementById('hexPick');
   pick.addEventListener('click',e=>e.stopPropagation());
+  const cb=document.getElementById('hexCaret');
+  if(cb) cb.addEventListener('click',e=>{ e.stopPropagation(); hexPanelOpen(!pick.classList.contains('open')); });
   document.getElementById('hexSel').addEventListener('change',e=>hexSetRes(+e.target.value));
   hexPickSync();
+}
+function hexPanelOpen(on){
+  const pick=document.getElementById('hexPick'), cb=document.getElementById('hexCaret'); if(!pick) return;
+  pick.classList.toggle('open',!!on);
+  if(cb){ cb.setAttribute('aria-expanded',String(!!on)); cb.setAttribute('aria-label',on?'Hide hex size options':'Show hex size options'); }
 }
 function hexPickSync(){
   const pick=document.getElementById('hexPick'); if(!pick) return;
@@ -5317,7 +5330,7 @@ const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice
 (function buildPanel(){
   let h='<div class="lp-top"><div class="lp-h">Project</div>'+
         '<button type="button" class="lp-geotog" id="lvTog" title="Show hex / mukim / district / state availability">Levels ▸</button>'+
-        '<span class="gchdr" aria-hidden="true"><span>HEX</span><span>MK</span><span>DIST</span><span>ST</span></span></div>';
+        '<span class="gchdr"><span class="hxh">HEX<button type="button" class="hxcaret" id="hexCaret" aria-expanded="false" aria-label="Show hex size options" title="Hex size options"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><span aria-hidden="true">MK</span><span aria-hidden="true">DIST</span><span aria-hidden="true">ST</span></span></div>';
   const hasD=k=>DLAYERS.some(l=>l.k===k);
   /* --- Demography: one row per indicator, mukim + district + state merged --- */
   const MERGE={pop:'mk_pop',pd:'mk_pd',sr:'mk_sr',yp:'mk_age014',wp:'mk_age1564',ep:'mk_age65',dr:'mk_dep',
