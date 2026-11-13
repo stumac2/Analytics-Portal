@@ -4953,6 +4953,7 @@ const lp=document.getElementById('lpanel');
    Demography = green, composite RPI rows = violet, each RPI domain = its own ramp (FAM). */
 function sectionRamp(k){
   if(!k) return 'violet';
+  if(typeof activeProject!=='undefined'&&activeProject==='rpi'&&['mk_dep','mk_dep_old','mk_age65'].includes(k)) return FAM.Social;
   if(String(k).startsWith('mk_')) return 'green';
   const g=(typeof MKLAYERS!=='undefined'&&MKLAYERS[k])||(typeof MKRPI_LAYERS!=='undefined'&&MKRPI_LAYERS[k]);
   const dom=g&&g.dom;
@@ -5321,29 +5322,32 @@ const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice
   h+=lrowHtml(kRow('Vulnerability','Vulnerability','Vulnerability Index','<span class="cv" title="vulnerability">V</span>'));
   for(const dom of ['Social','Economic','Physical','Climate']){
     h+=`<details class="dgroup"><summary><span class="dot" style="background:var(${DOMCOL[dom]})"></span>${dom}<span class="chev">▶</span></summary><div class="sublist">`;
-    h+=lrowHtml(kRow(dom,dom+' domain score',dom+' resilience'));
-    let last=null;
+    const LM=k=>(typeof MKRPI_LAYERS!=='undefined'&&MKRPI_LAYERS[k])||MKLAYERS[k]||{label:k,title:k};
+    const CVMAP={Social:{cap:['osm_health','osm_education','osm_community'],vul:['mk_dep','mk_dep_old','mk_age65']},
+      Economic:{cap:['osm_shops','osm_finance'],vul:[]},
+      Physical:{cap:['osm_transport','osm_emergency'],vul:['periph','urban_km','osm_industrial','osm_buildings']},
+      Climate:{cap:['osm_green'],vul:['coast_km','heat','rain','osm_water']}};
+    const BADGE=c=>`<span class="cv" title="${c?'capacity':'vulnerability'}">${c?'C':'V'}</span>`;
+    const scoreRow=(k,label,title,badge)=>({label,title,badge,proj:'rpi',src:{mukim:srcOf('mk:osm_'+k),district:srcOf('k:'+({social:'Social',economic:'Economic',physical:'Physical',climate:'Climate'}[k]||k)),state:srcOf('k:'+({social:'Social',economic:'Economic',physical:'Physical',climate:'Climate'}[k]||k))}});
+    h+=lrowHtml({label:dom+' domain score',title:dom+' resilience (mukim: OSM + inherited district data; district/state: DOSM only)',proj:'rpi',
+      src:{mukim:srcOf('mk:osm_'+dom.toLowerCase()),district:srcOf('k:'+dom),state:srcOf('k:'+dom)}});
+    const rows={cap:[],vul:[]};
     M.meta[dom].forEach(([key,label0,isState])=>{
       const kk=M.pref[dom]+key, cap=!!M.cap[kk];
       const dupe=Object.entries(M.meta).some(([d2,a])=>d2!==dom&&a.some(m=>m[1]===label0));
       const label=dupe?label0+' ('+dom.toLowerCase()+')':label0;
-      if(cap!==last){ h+=`<div class="cvhead">${cap?'Capacity':'Vulnerability'}</div>`; last=cap; }
-      h+=lrowHtml({label,title:label+(isState?' (state-level data)':''),proj:'rpi',
-        badge:`<span class="cv" title="${cap?'capacity':'vulnerability'}">${cap?'C':'V'}</span>`,
+      rows[cap?'cap':'vul'].push({label,title:label+(isState?' (state-level data)':''),proj:'rpi',badge:BADGE(cap),
         src:{mukim:null,district:isState?null:srcOf('ind:'+kk),state:srcOf('ind:'+kk)}});
     });
-    const mkKeys=MKDOM(dom);
-    if(mkKeys.length){
-      h+=`<div class="cvhead">Geographic context</div>`;
-      mkKeys.forEach(k=>h+=lrowHtml(aggRow(k,MKLAYERS[k].label,MKLAYERS[k].title,'<span class="cv" title="geographic context">G</span>')));
-    }
-    if(typeof MKRPI_LAYERS!=='undefined'){
-      const osmKeys=Object.keys(MKRPI_LAYERS).filter(k=>MKRPI_LAYERS[k].dom===dom);
-      if(osmKeys.length){
-        h+=`<div class="cvhead">Infrastructure (OSM)</div>`;
-        osmKeys.forEach(k=>h+=lrowHtml(aggRow(k,MKRPI_LAYERS[k].label,MKRPI_LAYERS[k].title,'<span class="cv" title="OSM infrastructure">I</span>')));
-      }
-    }
+    ['cap','vul'].forEach(t=>{
+      (CVMAP[dom][t]||[]).forEach(k=>{ const m=LM(k); rows[t].push(aggRow(k,m.label==='Commercial density'?m.label:m.label,m.title,BADGE(t==='cap'))); });
+    });
+    [['cap','Capacity'],['vul','Vulnerability']].forEach(([t,nm])=>{
+      h+=`<div class="cvhead">${nm}</div>`;
+      h+=lrowHtml({label:dom+' '+nm.toLowerCase(),title:dom+' '+nm.toLowerCase()+' score (mukim level)',proj:'rpi',badge:BADGE(t==='cap'),
+        src:{mukim:srcOf('mk:osm_'+dom.toLowerCase()+'_'+(t==='cap'?'cap':'vul')),district:null,state:null}});
+      rows[t].forEach(r=>h+=lrowHtml(r));
+    });
     h+='</div></details>';
   }
   h+='</div></details>';
