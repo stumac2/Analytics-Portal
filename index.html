@@ -8238,7 +8238,7 @@ let MCA_ON=false;          /* analysis mode active */
       html+='<div class="geo-actions"><button type="button" data-geo="restart" class="primary">Play again</button><button type="button" data-geo="back">Back to tools</button></div>';
     } else {
       html+='<div class="geo-canvas-wrap"><canvas id="geoCanvas" width="380" height="320"></canvas></div>';
-      if(!isState) html+='<button type="button" class="geo-clue" data-geo="clue"'+(GEO.clueUsed?' disabled':'')+'>&#128269; Clue — show district name</button>';
+      if(!isState){ const df=GEO.order[GEO.idx]; html+='<div class="geo-feedback" style="color:var(--ink-2);font-size:13px">District: '+(df.properties.name||df.properties.code_state_district||'')+'</div>'; }
       html+='<div class="geo-feedback" id="geoFb"></div>';
       html+='<div class="geo-btns" id="geoBtns">'+ALL_STATES.map(s=>'<button type="button" data-ans="'+s+'">'+s+'</button>').join('')+'</div>';
       if(GEO.answered) html+='<div class="geo-actions"><button type="button" data-geo="next" class="primary">'+(GEO.idx<GEO.order.length-1?'Next':(isState?'Start districts':'See results'))+'</button></div>';
@@ -8273,14 +8273,6 @@ let MCA_ON=false;          /* analysis mode active */
       const k=btn.dataset.geo;
       if(k==='back'){ geoLeave(); showMenu(); }
       else if(k==='restart') geoStartStateRound();
-      else if(k==='clue'&&!GEO.clueUsed){
-        GEO.clueUsed=true;
-        btn.disabled=true;
-        const f=GEO.order[GEO.idx];
-        const name=f.properties.name||f.properties.code_state_district||'';
-        const fb=document.getElementById('geoFb');
-        if(fb){ fb.textContent='District: '+name; fb.className='geo-feedback'; }
-      }
       else if(k==='next'){
         GEO.idx++; GEO.answered=false; GEO.clueUsed=false;
         if(GEO.idx>=GEO.order.length){
