@@ -896,6 +896,35 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .gapp .gp-legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:middle}
 .gapp .gp-summary{font-size:13px;line-height:1.5;padding:8px 0}
 .gapp .gp-summary b{color:var(--ink)}
+/* Hotspot panel */
+.hotp[hidden]{display:none!important}
+.hotp{position:absolute;top:10px;left:10px;bottom:10px;width:340px;max-width:calc(100% - 20px);z-index:7;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.16);overflow:auto;padding:10px 12px 12px;font-size:12px;color:var(--ink)}
+.hotp .hp2-h{display:flex;align-items:center;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--line-2);margin-bottom:8px}
+.hotp .hp2-h b{font-family:var(--display);font-size:14px}
+.hotp button{font:inherit;cursor:pointer}
+.hotp .hp2-h button{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 9px;font-size:12px}
+.hotp .hp2-s{margin-bottom:10px}
+.hotp .hp2-l{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-bottom:4px}
+.hotp .hp2-hint{font-size:12px;color:var(--ink-2);line-height:1.4}
+.hotp .hp2-note{font-size:10.5px;color:var(--ink-3);line-height:1.4;padding-top:4px}
+.hotp .hp2-seg{display:flex;gap:4px;flex-wrap:wrap}
+.hotp .hp2-seg button{flex:1 1 0;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:6px 4px;font-weight:600;min-width:60px}
+.hotp .hp2-seg button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.hotp .hp2-card{border-top:1px solid var(--line-2);padding-top:10px}
+.hotp .hp2-ct{font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-2);padding-bottom:6px}
+.hotp table{width:100%;border-collapse:collapse;font-size:11.5px}
+.hotp th,.hotp td{padding:4px 4px;text-align:right;border-bottom:1px solid var(--line-2)}
+.hotp th:first-child,.hotp td:first-child{text-align:left;color:var(--ink-2)}
+.hotp th{font-family:var(--display);font-size:10.5px;color:var(--ink)}
+.hotp tr.pop td{font-weight:700;color:var(--ink)}
+.hotp .hp2-act{display:flex;gap:6px;padding:10px 0 4px}
+.hotp .hp2-act button{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 9px;font-size:12px}
+.hotp .hp2-ramp{height:10px;border-radius:4px;margin:6px 0 2px;background:linear-gradient(90deg,rgba(0,0,255,0),rgba(0,0,255,.3),rgba(0,255,0,.5),rgba(255,255,0,.7),rgba(255,0,0,.9))}
+.hotp .hp2-ramp-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--ink-3)}
+.hotp .hp2-slider{width:100%;margin:4px 0}
+.hotp .hp2-slider-row{display:flex;align-items:center;gap:8px}
+.hotp .hp2-slider-row input[type="range"]{flex:1}
+.hotp .hp2-slider-row span{font-size:11px;color:var(--ink-2);min-width:28px;text-align:right}
 .hexpick{display:none;padding:2px 8px 8px;border-bottom:1px solid var(--line-2);margin-bottom:4px}
 .geo-open .hexpick.open{display:block}
 .hexpick .hp-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:4px 0}
@@ -2589,6 +2618,8 @@ dataOpacitySlider.addEventListener('input',()=>{
   if(map.getLayer('buf-line')) map.setPaintProperty('buf-line','line-opacity',v);
   if(map.getLayer('gap-fill')) map.setPaintProperty('gap-fill','fill-opacity',v*0.4);
   if(map.getLayer('gap-line')) map.setPaintProperty('gap-line','line-opacity',v);
+  if(map.getLayer('hot-heat')) map.setPaintProperty('hot-heat','heatmap-opacity',v*0.8);
+  if(map.getLayer('hot-pts')) map.setPaintProperty('hot-pts','circle-opacity',v*0.7);
   if(map.getLayer('hex-grid')) map.setPaintProperty('hex-grid','fill-opacity',v*0.55);
   if(map.getLayer('hex-line')) map.setPaintProperty('hex-line','line-opacity',v*0.5);
 });
@@ -3454,7 +3485,7 @@ map.on('load',()=>{
 
   /* Click: mukim layer */
   map.on('click','mukim-fill',e=>{
-    if(window.ISO_ON||window.BUF_ON||window.GAP_ON) return;
+    if(window.ISO_ON||window.BUF_ON||window.GAP_ON||window.HOT_ON) return;
     if(!e.features||!e.features.length) return;
     const nm=e.features[0].properties.n;
     if(mkComparing && selMukim && nm!==selMukim){
@@ -3479,7 +3510,7 @@ map.on('load',()=>{
 
   /* Click: state layer */
   map.on('click','state-fill',e=>{
-    if(window.ISO_ON||window.BUF_ON||window.GAP_ON) return;
+    if(window.ISO_ON||window.BUF_ON||window.GAP_ON||window.HOT_ON) return;
     if(!e.features||!e.features.length) return;
     const st=e.features[0].properties.state;
     stateF=st; sel=st;
@@ -3496,7 +3527,7 @@ map.on('load',()=>{
 
   /* Click: district layer */
   map.on('click','district-fill',e=>{
-    if(window.ISO_ON||window.BUF_ON||window.GAP_ON) return;
+    if(window.ISO_ON||window.BUF_ON||window.GAP_ON||window.HOT_ON) return;
     if(!e.features||!e.features.length) return;
     const code=e.features[0].properties.code_state_district;
     if(!code) return;
@@ -6998,7 +7029,7 @@ let MCA_ON=false;          /* analysis mode active */
     const b=e.target.closest('button[data-mode]'); if(!b) return;
     if(b.dataset.mode==='analysis'){ showMenu(); return; }
     /* Explorer returns the portal to its default blank state */
-    if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); menu.hidden=true;
+    if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); if(window.HOT_ON) hotLeave(); menu.hidden=true;
     modeTogBtns.querySelectorAll('button').forEach(x=>
       x.setAttribute('aria-pressed',String(x.dataset.mode==='explorer')));
     if(typeof resetMap==='function') resetMap(); else setMode(false);
@@ -7043,6 +7074,7 @@ let MCA_ON=false;          /* analysis mode active */
     '<button type="button" class="cam-card" data-ca="iso"><b>Isochrone Mapping</b><span>Drop a pin or use a district centroid, pick a travel mode and time, and see the area reachable with the population and facilities inside it.</span></button>'+
     '<button type="button" class="cam-card" data-ca="buf"><b>Buffer / Proximity</b><span>Drop a pin and draw distance rings (250 m – 5 km). See the population and facilities inside each ring.</span></button>'+
     '<button type="button" class="cam-card" data-ca="gap"><b>Gap Analysis</b><span>Pick a facility type and walking distance. Areas beyond that distance are highlighted as service gaps, with population and coverage statistics.</span></button>'+
+    '<button type="button" class="cam-card" data-ca="hot"><b>Hotspot / Cluster</b><span>See where facilities or population concentrate. A heatmap highlights density clusters and ranks the top mukims.</span></button>'+
     '</div>';
   host.appendChild(menu);
 
@@ -7193,6 +7225,7 @@ let MCA_ON=false;          /* analysis mode active */
     if(window.ISO_ON) isoLeave();
     if(window.BUF_ON) bufLeave();
     if(window.GAP_ON) gapLeave();
+    if(window.HOT_ON) hotLeave();
     if(MCA_ON) setMode(false);
     if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
     menu.hidden=false;
@@ -7203,6 +7236,7 @@ let MCA_ON=false;          /* analysis mode active */
     else if(b.dataset.ca==='iso') isoEnter();
     else if(b.dataset.ca==='buf') bufEnter();
     else if(b.dataset.ca==='gap') gapEnter();
+    else if(b.dataset.ca==='hot') hotEnter();
     else { menu.hidden=true; if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='explorer'))); }
   });
   isop.addEventListener('click',e=>{
@@ -7535,7 +7569,163 @@ let MCA_ON=false;          /* analysis mode active */
     else gapDownload(k);
   });
 
-  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); if(MCA_ON) setMode(false); };
+  /* ---------- Hotspot / Cluster Analysis ---------- */
+  window.HOT_ON=false;
+  const HOT={facType:'all',radius:30,layersOk:false,pts:null,stats:null};
+  const HOT_FAC_TYPES=[
+    {k:'all',label:'All facilities'},
+    {k:'pop',label:'Population'},
+    {k:'hx_health',label:'Healthcare'},
+    {k:'hx_education',label:'Education'},
+    {k:'hx_community',label:'Community'},
+    {k:'hx_shops',label:'Shops'},
+    {k:'hx_finance',label:'Financial'},
+    {k:'hx_transport',label:'Transport'},
+    {k:'hx_emergency',label:'Emergency'}];
+
+  function hotPoints(){
+    const G=hexPrep(), features=[], stats=[];
+    for(let i=0;i<G.names.length;i++){
+      const bb=G.bbs[i], cx=(bb[0]+bb[2])/2, cy=(bb[1]+bb[3])/2;
+      const row=MKRPI[G.names[i]]; if(!row) continue;
+      let w=0;
+      if(HOT.facType==='all'){
+        for(const gk of ISO_GROUPS){ const ix=HEX_GROUPS[gk].mk; for(const k of ix) w+=row[k]||0; }
+      } else if(HOT.facType==='pop'){
+        w=row[33]||0;
+      } else {
+        const ix=HEX_GROUPS[HOT.facType].mk; for(const k of ix) w+=row[k]||0;
+      }
+      if(w>0){
+        features.push({type:'Feature',geometry:{type:'Point',coordinates:[cx,cy]},properties:{w,name:G.names[i],area:G.area[i]}});
+        stats.push({name:G.names[i],w,area:G.area[i],dens:G.area[i]>0?w/G.area[i]:0,pop:row[33]||0});
+      }
+    }
+    stats.sort((a,b)=>b.dens-a.dens);
+    HOT.stats=stats;
+    const fc={type:'FeatureCollection',features};
+    HOT.pts=fc;
+    return fc;
+  }
+  function hotLayers(){
+    if(HOT.layersOk&&map.getSource('hot-src')) return;
+    map.addSource('hot-src',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'hot-heat',type:'heatmap',source:'hot-src',paint:{
+      'heatmap-weight':['interpolate',['linear'],['get','w'],0,0,1,1],
+      'heatmap-intensity':['interpolate',['linear'],['zoom'],0,0.6,9,2.5],
+      'heatmap-color':['interpolate',['linear'],['heatmap-density'],0,'rgba(0,0,255,0)',0.15,'rgba(0,0,255,0.3)',0.3,'rgba(0,255,128,0.5)',0.5,'rgba(0,255,0,0.6)',0.7,'rgba(255,255,0,0.7)',0.9,'rgba(255,128,0,0.85)',1,'rgba(255,0,0,0.9)'],
+      'heatmap-radius':['interpolate',['linear'],['zoom'],0,8,5,HOT.radius,14,HOT.radius*2.5],
+      'heatmap-opacity':0.8
+    }});
+    map.addLayer({id:'hot-pts',type:'circle',source:'hot-src',minzoom:10,paint:{
+      'circle-radius':['interpolate',['linear'],['zoom'],10,2,14,6],
+      'circle-color':'#d6336c','circle-stroke-width':1,'circle-stroke-color':'#fff','circle-opacity':0.7
+    }});
+    HOT.layersOk=true;
+  }
+  function hotSetData(fc){ try{ map.getSource('hot-src').setData(fc||{type:'FeatureCollection',features:[]}); }catch(_){} }
+  function hotNormalise(fc){
+    if(!fc.features.length) return fc;
+    const max=fc.features.reduce((m,f)=>Math.max(m,f.properties.w),0);
+    if(max>0) fc.features.forEach(f=>{ f.properties.w=f.properties.w/max; });
+    return fc;
+  }
+  function hotUpdateRadius(){
+    if(!HOT.layersOk||!map.getLayer('hot-heat')) return;
+    map.setPaintProperty('hot-heat','heatmap-radius',['interpolate',['linear'],['zoom'],0,8,5,HOT.radius,14,HOT.radius*2.5]);
+  }
+  function hotRun(){
+    const fc=hotPoints();
+    hotNormalise(fc);
+    hotLayers(); hotSetData(fc);
+    hotRender();
+  }
+  function hotRender(){
+    const box=hotp.querySelector('#hotRes'), S=HOT.stats;
+    if(!S||!S.length){ box.innerHTML='<div class="hp2-hint">No data for this selection.</div>'; return; }
+    const label=HOT_FAC_TYPES.find(f=>f.k===HOT.facType)?.label||'Facilities';
+    const isP=HOT.facType==='pop';
+    const unit=isP?'people':'facilities';
+    let h='<div class="hp2-card"><div class="hp2-ct">'+label+' density hotspots</div>';
+    h+='<div class="hp2-ramp"></div><div class="hp2-ramp-lbl"><span>Low</span><span>High</span></div>';
+    /* top 10 table */
+    h+='<table><tr><th style="text-align:left">Mukim</th><th>'+label+'</th><th>Density / km²</th></tr>';
+    const top=S.slice(0,10);
+    top.forEach((s,i)=>{
+      const cls=i===0?'pop':'';
+      h+=`<tr class="${cls}"><td style="text-align:left">${s.name}</td><td>${isP?Math.round(s.w).toLocaleString():fmt(s.w)}</td><td>${fmt(s.dens)}</td></tr>`;
+    });
+    h+='</table>';
+    /* summary */
+    const total=S.reduce((t,s)=>t+s.w,0);
+    const topN=S.slice(0,Math.ceil(S.length*0.1));
+    const topTotal=topN.reduce((t,s)=>t+s.w,0);
+    const topPct=total>0?((topTotal/total)*100).toFixed(1):'0';
+    h+='<div class="hp2-note" style="padding-top:8px"><b>Concentration:</b> top 10% of mukims ('+topN.length+') hold '+topPct+'% of all '+unit+'.</div>';
+    h+='<div class="hp2-act"><button type="button" data-hot="geojson">GeoJSON</button><button type="button" data-hot="csv">CSV</button></div>';
+    h+='<div class="hp2-note">Points are mukim centroids, weighted by total '+unit+' count. Density = count / mukim area (km²).</div>';
+    h+='</div>';
+    box.innerHTML=h;
+  }
+  function hotDownload(kind){
+    if(!HOT.stats) return;
+    const label=HOT_FAC_TYPES.find(f=>f.k===HOT.facType)?.label||'all';
+    if(kind==='geojson'){
+      const fc={type:'FeatureCollection',features:HOT.stats.map(s=>{
+        const bb=hexPrep().bbs[hexPrep().names.indexOf(s.name)];
+        return {type:'Feature',geometry:{type:'Point',coordinates:[(bb[0]+bb[2])/2,(bb[1]+bb[3])/2]},
+          properties:{mukim:s.name,count:s.w,density_per_km2:+s.dens.toFixed(4),area_km2:+s.area.toFixed(2),population:Math.round(s.pop),type:HOT.facType}};
+      })};
+      isoSave('hotspots.geojson',JSON.stringify(fc),'application/geo+json');
+    } else {
+      const hdr=['mukim','type','count','density_per_km2','area_km2','population'];
+      const lines=[hdr.join(',')].concat(HOT.stats.map(s=>['"'+s.name+'"',HOT.facType,HOT.facType==='pop'?Math.round(s.w):s.w.toFixed(2),s.dens.toFixed(4),s.area.toFixed(2),Math.round(s.pop)].join(',')));
+      isoSave('hotspots.csv',lines.join('\n'),'text/csv');
+    }
+  }
+  /* DOM */
+  const hotp=document.createElement('div'); hotp.className='hotp'; hotp.hidden=true;
+  hotp.innerHTML='<div class="hp2-h"><button type="button" data-hot="back">&larr; Tools</button><b>Hotspot / Cluster</b></div>'+
+    '<div class="hp2-s"><div class="hp2-l">Data layer</div><div class="hp2-seg" id="hotFac"></div></div>'+
+    '<div class="hp2-s"><div class="hp2-l">Heatmap radius</div><div class="hp2-slider-row"><input type="range" id="hotRadius" min="10" max="80" value="30"><span id="hotRadVal">30</span></div></div>'+
+    '<div id="hotRes"></div>';
+  host.appendChild(hotp);
+  function hotBuildControls(){
+    hotp.querySelector('#hotFac').innerHTML=HOT_FAC_TYPES.map(f=>`<button type="button" data-fac="${f.k}" class="${HOT.facType===f.k?'on':''}">${f.label}</button>`).join('');
+  }
+  function hotEnter(){
+    menu.hidden=true; window.HOT_ON=true;
+    if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
+    if(typeof hexOn==='function'&&hexOn()) hexExit();
+    chrome(true);
+    const t=document.getElementById('mapTitle'); if(t) t.textContent='Hotspot / Cluster analysis';
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity='0.4'; lpEl.style.pointerEvents='none'; }
+    hotLayers(); hotBuildControls();
+    hotp.hidden=false;
+    hotRun();
+  }
+  function hotLeave(){
+    if(!window.HOT_ON) return;
+    window.HOT_ON=false; hotp.hidden=true;
+    hotSetData(null); HOT.stats=null; HOT.pts=null;
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity=''; lpEl.style.pointerEvents=''; }
+    chrome(false); _origSwitch2(activeProject||'rpi'); markActiveProject(activeProject||'rpi');
+  }
+  hotp.addEventListener('click',e=>{
+    const f=e.target.closest('#hotFac button'), a=e.target.closest('[data-hot]');
+    if(f){ HOT.facType=f.dataset.fac; hotBuildControls(); hotRun(); return; }
+    if(!a) return;
+    const k=a.dataset.hot;
+    if(k==='back'){ hotLeave(); showMenu(); }
+    else hotDownload(k);
+  });
+  hotp.querySelector('#hotRadius').addEventListener('input',e=>{
+    HOT.radius=+e.target.value;
+    hotp.querySelector('#hotRadVal').textContent=HOT.radius;
+    hotUpdateRadius();
+  });
+
+  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); if(window.HOT_ON) hotLeave(); if(MCA_ON) setMode(false); };
   /* exposed for the download menu */
   window.__mcaState=()=>({scores:S.scores,level:S.level,extent:{...S.extent},
     crit:JSON.parse(JSON.stringify(S.crit)),order:S.order.slice(),
