@@ -821,8 +821,7 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .map-fs .mapcol-wrap>.card:not(.mapbox),.map-fs .mapcol-wrap>section,.map-fs footer,.map-fs .notes{display:none!important}
 .map-fs .tcband{display:none!important}
 /* --- Sidebar collapse --- */
-.sb-tog{position:absolute;top:6px;left:6px;z-index:5;font:inherit;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12);opacity:.85}
-.sb-tog:hover{color:var(--ink);border-color:var(--ink-3);opacity:1}
+/* sb-tog uses .fs-btn styling from the header row */
 .sb-hidden .sidebar-col{display:none!important}
 .sb-hidden .maprow{grid-template-columns:minmax(0,1fr)!important}
 .sb-hidden .sb-tog span::before{content:'☰ Layers'}
@@ -1208,6 +1207,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
         </div>
       </div>
       <button type="button" class="dlmini" id="dlMap" data-dltrig="bundle,selgeojson,geojson,shp,xlsx,pdf" aria-haspopup="true" aria-expanded="false">Download</button>
+      <button type="button" class="fs-btn" id="sbTog" title="Toggle layer panel"><span></span></button>
       <button type="button" class="fs-btn" id="fsBtn" title="Toggle fullscreen map">⛶</button>
       </div>
       <div class="legend">
@@ -1219,9 +1219,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
       </div>
     </div>
     <div class="card-b" style="padding:10px 12px 14px">
-      <div id="mapHost" style="position:relative">
-        <button type="button" class="sb-tog" id="sbTog" title="Toggle layer panel"><span></span></button>
-      </div>
+      <div id="mapHost" style="position:relative"></div>
     </div>
     <div class="stats" id="statBox" aria-live="polite"></div>
     <details class="linfo" id="layerInfo"></details>
