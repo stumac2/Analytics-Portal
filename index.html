@@ -806,6 +806,19 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .lv-filtered .lv-clear{display:block}
 .lv-filtered .lrow.lv-hidden{display:none}
 .lv-filtered .lp-geotog{border-color:var(--accent);color:var(--accent)}
+/* --- Fullscreen map --- */
+.fs-btn{font:inherit;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap}
+.fs-btn:hover{color:var(--ink);border-color:var(--ink-3)}
+.map-fs header,.map-fs .controls{display:none!important}
+.map-fs .grid{gap:0}
+.map-fs .maprow{height:100vh;align-content:stretch}
+.map-fs .sidebar-col{max-height:100vh;height:100vh;overflow-y:auto}
+.map-fs .mapcol-wrap{height:100vh;overflow:hidden}
+.map-fs .mapbox{display:flex;flex-direction:column;height:100%}
+.map-fs .mapbox .card-b{flex:1 1 0;overflow:hidden}
+.map-fs #mlMap{aspect-ratio:unset!important;height:100%!important}
+.map-fs .mapcol-wrap>.card:not(.mapbox),.map-fs .mapcol-wrap>section,.map-fs footer,.map-fs .notes{display:none!important}
+.map-fs .tcband{display:none!important}
 .lrow{display:flex;align-items:center;min-width:0}
 .lp .lrow .lbtn{flex:1 1 auto;width:auto;min-width:0}
 .lp .lrow.on .lbtn{background:var(--accent-soft);color:var(--ink);font-weight:600}
@@ -1187,6 +1200,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
         </div>
       </div>
       <button type="button" class="dlmini" id="dlMap" data-dltrig="bundle,selgeojson,geojson,shp,xlsx,pdf" aria-haspopup="true" aria-expanded="false">Download</button>
+      <button type="button" class="fs-btn" id="fsBtn" title="Toggle fullscreen map">⛶</button>
       </div>
       <div class="legend">
         <span id="legLo">Lower</span>
@@ -8108,6 +8122,23 @@ document.getElementById('statBox').style.display='none';
 document.getElementById('layerInfo').style.display='none';
 document.getElementById('detail').style.display='none';
 const _tblCard=document.getElementById('tbl')?.closest('.card'); if(_tblCard) _tblCard.style.display='none';
+</script>
+<script>
+/* --- Fullscreen map toggle --- */
+(function(){
+  const btn=document.getElementById('fsBtn'); if(!btn) return;
+  function toggleFs(){
+    const on=document.body.classList.toggle('map-fs');
+    btn.textContent=on?'✕':'⛶';
+    btn.title=on?'Exit fullscreen':'Toggle fullscreen map';
+    window.scrollTo(0,0);
+    setTimeout(()=>{ if(typeof map!=='undefined') map.resize(); },50);
+  }
+  btn.addEventListener('click',toggleFs);
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&document.body.classList.contains('map-fs')){ e.preventDefault(); toggleFs(); }
+  });
+})();
 </script>
 <script src="https://hypothes.is/embed.js" async></script>
 </body></html>
