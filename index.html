@@ -3836,7 +3836,7 @@ function paint(){
     const inMca=(typeof MCA_ON!=='undefined')&&MCA_ON;
     mt.textContent = indKey ? META(indKey)[1]+(byState?' — state values':'')
                             : layer==='MCA_custom' ? 'Custom analysis'
-                            : (LAYERS.find(l=>l.k===layer)||{title:layer}).title+(byState?' — by state':'');
+                            : ((LAYERS.find(l=>l.k===layer)||{}).title||layer||'Analytics Portal')+(byState?' — by state':'');
     legend.style.display='';
     if(wWrap) wWrap.style.display=(inMca||activeProject!=='rpi')?'none':'';
     document.getElementById('statBox').style.display=inMca?'none':'';
