@@ -8181,6 +8181,7 @@ let MCA_ON=false;          /* analysis mode active */
   }
   function geoLeave(){
     if(!window.GEO_ON) return;
+    if(GEO.timer){ clearTimeout(GEO.timer); GEO.timer=null; }
     window.GEO_ON=false; geop.hidden=true;
     const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity=''; lpEl.style.pointerEvents=''; }
     chrome(false); _origSwitch2(activeProject||'rpi'); markActiveProject(activeProject||'rpi');
@@ -8241,7 +8242,7 @@ let MCA_ON=false;          /* analysis mode active */
       if(!isState){ const df=GEO.order[GEO.idx]; html+='<div class="geo-feedback" style="color:var(--ink-2);font-size:13px">District: '+(df.properties.name||df.properties.code_state_district||'')+'</div>'; }
       html+='<div class="geo-feedback" id="geoFb"></div>';
       html+='<div class="geo-btns" id="geoBtns">'+ALL_STATES.map(s=>'<button type="button" data-ans="'+s+'">'+s+'</button>').join('')+'</div>';
-      if(GEO.answered) html+='<div class="geo-actions"><button type="button" data-geo="next" class="primary">'+(GEO.idx<GEO.order.length-1?'Next':(isState?'Start districts':'See results'))+'</button></div>';
+      /* no Next button — auto-advances after 3s */
     }
     html+='</div>';
     geop.innerHTML=html;
@@ -8273,13 +8274,6 @@ let MCA_ON=false;          /* analysis mode active */
       const k=btn.dataset.geo;
       if(k==='back'){ geoLeave(); showMenu(); }
       else if(k==='restart') geoStartStateRound();
-      else if(k==='next'){
-        GEO.idx++; GEO.answered=false; GEO.clueUsed=false;
-        if(GEO.idx>=GEO.order.length){
-          if(GEO.phase==='state') geoStartDistrictRound();
-          else { GEO.phase='done'; GEO.distScore=GEO.score-GEO.stateScore; geoBuildUI(); }
-        } else geoBuildUI();
-      }
     }
     if(ans&&!GEO.answered){
       GEO.answered=true; GEO.total++;
@@ -8302,14 +8296,18 @@ let MCA_ON=false;          /* analysis mode active */
         }
       }
       geop.querySelectorAll('[data-ans]').forEach(b=>{ if(!b.classList.contains('correct')&&!b.classList.contains('wrong')&&!b.classList.contains('reveal')) b.disabled=true; });
-      /* add Next button */
-      const isState=GEO.phase==='state';
-      const acts=document.createElement('div'); acts.className='geo-actions';
-      acts.innerHTML='<button type="button" data-geo="next" class="primary">'+(GEO.idx<GEO.order.length-1?'Next':(isState?'Start districts':'See results'))+'</button>';
-      const body=geop.querySelector('.geo-body');
-      if(body) body.appendChild(acts);
       /* update score display */
       geop.querySelector('.geo-score b').textContent=GEO.score+' / '+GEO.total;
+      /* auto-advance after 3 seconds */
+      if(GEO.timer) clearTimeout(GEO.timer);
+      GEO.timer=setTimeout(()=>{
+        GEO.timer=null;
+        GEO.idx++; GEO.answered=false;
+        if(GEO.idx>=GEO.order.length){
+          if(GEO.phase==='state') geoStartDistrictRound();
+          else { GEO.phase='done'; GEO.distScore=GEO.score-GEO.stateScore; geoBuildUI(); }
+        } else geoBuildUI();
+      },3000);
     }
   });
 
