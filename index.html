@@ -958,7 +958,7 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .hotp .hp2-slider-row span{font-size:11px;color:var(--ink-2);min-width:28px;text-align:right}
 /* Geoguesser */
 .geop[hidden]{display:none!important}
-.geop{position:absolute;inset:0;z-index:8;background:var(--panel);border-radius:8px;padding:18px;overflow:auto;display:flex;flex-direction:column}
+.geop{position:fixed;inset:0;z-index:999;background:var(--panel);padding:18px;overflow:auto;display:flex;flex-direction:column}
 .geop .geo-hdr{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex:0 0 auto}
 .geop .geo-hdr h3{font-family:var(--display);font-size:18px;margin:0;color:var(--ink)}
 .geop .geo-hdr button{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font:inherit}
@@ -8239,7 +8239,7 @@ let MCA_ON=false;          /* analysis mode active */
       html+='<div class="geo-actions"><button type="button" data-geo="restart" class="primary">Play again</button><button type="button" data-geo="back">Back to tools</button></div>';
     } else {
       html+='<div class="geo-canvas-wrap"><canvas id="geoCanvas" width="380" height="320"></canvas></div>';
-      if(!isState){ const df=GEO.order[GEO.idx]; html+='<div class="geo-feedback" style="color:var(--ink-2);font-size:13px">District: '+(df.properties.name||df.properties.code_state_district||'')+'</div>'; }
+      if(!isState){ const df=GEO.order[GEO.idx]; html+='<div class="geo-feedback" style="color:var(--ink-2);font-size:13px">District: '+(df.properties.district||df.properties.code_state_district||'')+'</div>'; }
       html+='<div class="geo-feedback" id="geoFb"></div>';
       html+='<div class="geo-btns" id="geoBtns">'+ALL_STATES.map(s=>'<button type="button" data-ans="'+s+'">'+s+'</button>').join('')+'</div>';
       /* no Next button — auto-advances after 3s */
@@ -8290,7 +8290,7 @@ let MCA_ON=false;          /* analysis mode active */
         /* highlight correct answer */
         geop.querySelectorAll('[data-ans]').forEach(b=>{ if(b.dataset.ans===correct) b.classList.add('reveal'); });
         if(fb){
-          const extra=GEO.phase==='district'?(f.properties.name?(' ('+f.properties.name+')'):''):'';
+          const extra=GEO.phase==='district'?(f.properties.district?(' ('+f.properties.district+')'):''):'';
           fb.textContent='✗ It was '+correct+extra;
           fb.className='geo-feedback wrong';
         }
