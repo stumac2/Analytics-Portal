@@ -5114,11 +5114,11 @@ const HEX_GROUPS={
   hx_transport:{label:'Public transport stops',ramp:'aqua',mk:[26,27],obs:['transport']},
   hx_emergency:{label:'Emergency services',ramp:'aqua',mk:[19,20],obs:['emergency']},
   /* --- Population & Building hex layers --- */
-  hx_buildings:{label:'Building density (OSM)',ramp:'purple',mk:[38],obs:['_bld'],unit:'/km²',
+  hx_buildings:{label:'Building density (OSM)',ramp:'magenta',mk:[38],obs:['_bld'],unit:'/km²',
     hint:'Counts OSM building footprints. At H3-6/7 uses mukim building totals; at H3-8/9 counts from vector tiles.'},
-  hx_pop:{label:'Population density',ramp:'red',mk:[33],obs:[],unit:'persons/km²',
+  hx_pop:{label:'Population density',ramp:'orange',mk:[33],obs:[],unit:'persons/km²',
     hint:'Distributes mukim census population uniformly across hex cells.'},
-  hx_pop_dasy:{label:'Population (building-weighted)',ramp:'red',mk:[33],obs:['_bld'],unit:'persons/km²',
+  hx_pop_dasy:{label:'Population (building-weighted)',ramp:'orange',mk:[33],obs:['_bld'],unit:'persons/km²',
     hint:'Dasymetric estimate: distributes mukim population using OSM building density as weight, giving finer spatial detail than uniform distribution.'}};
 const HEX_FOR={osm_health:'hx_health',osm_education:'hx_education',osm_community:'hx_community',
   osm_shops:'hx_shops',osm_shops_new:'hx_shops_new',osm_finance:'hx_finance',osm_transport:'hx_transport',osm_emergency:'hx_emergency',
