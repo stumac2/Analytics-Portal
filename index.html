@@ -5113,6 +5113,13 @@ const HEX_GROUPS={
   hx_finance:{label:'Financial access (banks, ATMs)',ramp:'orange',mk:[24,25],obs:['finance']},
   hx_transport:{label:'Public transport stops',ramp:'aqua',mk:[26,27],obs:['transport']},
   hx_emergency:{label:'Emergency services',ramp:'aqua',mk:[19,20],obs:['emergency']},
+  /* --- Land-use & waterway hex layers --- */
+  hx_green:{label:'Green space density (hex)',ramp:'green',mk:[35],obs:['_landuse_green'],unit:'/km²',
+    hint:'Counts OSM green spaces (parks, gardens, forests, recreation). At H3-6/7 uses mukim totals; at H3-8/9 counts from vector tiles.'},
+  hx_water:{label:'Waterway density (hex)',ramp:'blue',mk:[36],obs:['_waterway'],unit:'/km²',
+    hint:'Counts OSM waterways (rivers, streams, canals, drains). At H3-6/7 uses mukim totals; at H3-8/9 counts from vector tiles.'},
+  hx_industrial:{label:'Industrial site density (hex)',ramp:'orange',mk:[37],obs:['_landuse_ind'],unit:'/km²',
+    hint:'Counts OSM industrial/commercial land-use areas. At H3-6/7 uses mukim totals; at H3-8/9 counts from vector tiles.'},
   /* --- Population & Building hex layers --- */
   hx_buildings:{label:'Building density (OSM)',ramp:'magenta',mk:[38],obs:['_bld'],unit:'/km²',
     hint:'Counts OSM building footprints. At H3-6/7 uses mukim building totals; at H3-8/9 counts from vector tiles.'},
@@ -5122,7 +5129,7 @@ const HEX_GROUPS={
     hint:'Dasymetric estimate: distributes mukim population using OSM building density as weight, giving finer spatial detail than uniform distribution.'}};
 const HEX_FOR={osm_health:'hx_health',osm_education:'hx_education',osm_community:'hx_community',
   osm_shops:'hx_shops',osm_shops_new:'hx_shops_new',osm_finance:'hx_finance',osm_transport:'hx_transport',osm_emergency:'hx_emergency',
-  osm_buildings:'hx_buildings'};
+  osm_buildings:'hx_buildings',osm_green:'hx_green',osm_water:'hx_water',osm_industrial:'hx_industrial'};
 const HEX_SRC={}; Object.keys(HEX_FOR).forEach(k=>{HEX_SRC[HEX_FOR[k]]=k;});
 /* Plug-in point for further hex layers (e.g. LST). def = {key,label,ramp,unit,compute(cells,res)->array of numbers|null}.
    Rows for registered sources still have to be added to the pop-out; compute() is called with the H3 cells in view. */
@@ -5144,6 +5151,81 @@ function hexObsBuildings(cells,res){
       cx=0;cy=0; for(const p of r){cx+=p[0];cy+=p[1];} cx/=r.length;cy/=r.length;
     } else if(g.type==='Point'){
       cx=g.coordinates[0]; cy=g.coordinates[1];
+    } else continue;
+    const dk=cx.toFixed(6)+','+cy.toFixed(6);
+    if(seen.has(dk)) continue; seen.add(dk);
+    const cell=h3.latLngToCell(cy,cx,res);
+    if(set.has(cell)) counts.set(cell,(counts.get(cell)||0)+1);
+  }
+  const a=HEX_RES[res].km2;
+  return cells.map(c=>(counts.get(c)||0)/a);
+}
+
+/* ---------- green space counting from vector tiles ---------- */
+const GREEN_CLASSES=new Set(['park','forest','recreation_ground','nature_reserve','garden','meadow','grass','cemetery','village_green','allotments']);
+function hexObsGreen(cells,res){
+  const set=new Set(cells), counts=new Map(), seen=new Set();
+  const feats=map.querySourceFeatures('hex-landuse',{sourceLayer:'landuse'});
+  for(const f of feats){
+    const cls=f.properties?.class;
+    if(!GREEN_CLASSES.has(cls)) continue;
+    const g=f.geometry; if(!g) continue;
+    let cx,cy;
+    if(g.type==='Polygon'){
+      const r=g.coordinates[0]; if(!r||r.length<3) continue;
+      cx=0;cy=0; for(const p of r){cx+=p[0];cy+=p[1];} cx/=r.length;cy/=r.length;
+    } else if(g.type==='MultiPolygon'){
+      const r=g.coordinates[0]?.[0]; if(!r||r.length<3) continue;
+      cx=0;cy=0; for(const p of r){cx+=p[0];cy+=p[1];} cx/=r.length;cy/=r.length;
+    } else continue;
+    const dk=cx.toFixed(6)+','+cy.toFixed(6);
+    if(seen.has(dk)) continue; seen.add(dk);
+    const cell=h3.latLngToCell(cy,cx,res);
+    if(set.has(cell)) counts.set(cell,(counts.get(cell)||0)+1);
+  }
+  const a=HEX_RES[res].km2;
+  return cells.map(c=>(counts.get(c)||0)/a);
+}
+
+/* ---------- waterway counting from vector tiles ---------- */
+function hexObsWater(cells,res){
+  const set=new Set(cells), counts=new Map(), seen=new Set();
+  const feats=map.querySourceFeatures('hex-waterway',{sourceLayer:'waterway'});
+  for(const f of feats){
+    const g=f.geometry; if(!g) continue;
+    let cx,cy;
+    if(g.type==='LineString'){
+      const pts=g.coordinates; if(!pts||pts.length<2) continue;
+      cx=0;cy=0; for(const p of pts){cx+=p[0];cy+=p[1];} cx/=pts.length;cy/=pts.length;
+    } else if(g.type==='MultiLineString'){
+      const pts=g.coordinates[0]; if(!pts||pts.length<2) continue;
+      cx=0;cy=0; for(const p of pts){cx+=p[0];cy+=p[1];} cx/=pts.length;cy/=pts.length;
+    } else continue;
+    const dk=cx.toFixed(6)+','+cy.toFixed(6);
+    if(seen.has(dk)) continue; seen.add(dk);
+    const cell=h3.latLngToCell(cy,cx,res);
+    if(set.has(cell)) counts.set(cell,(counts.get(cell)||0)+1);
+  }
+  const a=HEX_RES[res].km2;
+  return cells.map(c=>(counts.get(c)||0)/a);
+}
+
+/* ---------- industrial/commercial counting from vector tiles ---------- */
+const INDUSTRIAL_CLASSES=new Set(['industrial','commercial','quarry','landfill','port','railway']);
+function hexObsIndustrial(cells,res){
+  const set=new Set(cells), counts=new Map(), seen=new Set();
+  const feats=map.querySourceFeatures('hex-landuse',{sourceLayer:'landuse'});
+  for(const f of feats){
+    const cls=f.properties?.class;
+    if(!INDUSTRIAL_CLASSES.has(cls)) continue;
+    const g=f.geometry; if(!g) continue;
+    let cx,cy;
+    if(g.type==='Polygon'){
+      const r=g.coordinates[0]; if(!r||r.length<3) continue;
+      cx=0;cy=0; for(const p of r){cx+=p[0];cy+=p[1];} cx/=r.length;cy/=r.length;
+    } else if(g.type==='MultiPolygon'){
+      const r=g.coordinates[0]?.[0]; if(!r||r.length<3) continue;
+      cx=0;cy=0; for(const p of r){cx+=p[0];cy+=p[1];} cx/=r.length;cy/=r.length;
     } else continue;
     const dk=cx.toFixed(6)+','+cy.toFixed(6);
     if(seen.has(dk)) continue; seen.add(dk);
@@ -5384,14 +5466,24 @@ function hexEnsureLayers(){
     attribution:'&copy; OpenFreeMap &copy; OpenStreetMap'});
   map.addLayer({id:'hex-bld-lyr',type:'fill',source:'hex-bld','source-layer':'building',minzoom:HEX_BLD_Z,
     paint:{'fill-opacity':0}});
+  /* Landuse source for green space & industrial hex counts */
+  map.addSource('hex-landuse',{type:'vector',tiles:['https://tiles.openfreemap.org/planet/latest/{z}/{x}/{y}.pbf'],maxzoom:14,
+    attribution:'&copy; OpenFreeMap &copy; OpenStreetMap'});
+  map.addLayer({id:'hex-landuse-lyr',type:'fill',source:'hex-landuse','source-layer':'landuse',minzoom:HEX_BLD_Z,
+    paint:{'fill-opacity':0}});
+  /* Waterway source for waterway hex counts */
+  map.addSource('hex-waterway',{type:'vector',tiles:['https://tiles.openfreemap.org/planet/latest/{z}/{x}/{y}.pbf'],maxzoom:14,
+    attribution:'&copy; OpenFreeMap &copy; OpenStreetMap'});
+  map.addLayer({id:'hex-waterway-lyr',type:'line',source:'hex-waterway','source-layer':'waterway',minzoom:HEX_BLD_Z,
+    paint:{'line-opacity':0,'line-width':0}});
   map.on('click','hex-fill',hexClick);
   map.on('mouseenter','hex-fill',()=>{map.getCanvas().style.cursor='pointer';});
   map.on('mouseleave','hex-fill',()=>{map.getCanvas().style.cursor='';});
   map.on('moveend',hexSchedule);
-  map.on('sourcedata',e=>{ if(HEX.on&&(e.sourceId==='hex-poi'||e.sourceId==='hex-bld')&&e.isSourceLoaded) hexSchedule(); });
+  map.on('sourcedata',e=>{ if(HEX.on&&(e.sourceId==='hex-poi'||e.sourceId==='hex-bld'||e.sourceId==='hex-landuse'||e.sourceId==='hex-waterway')&&e.isSourceLoaded) hexSchedule(); });
 }
 function hexSetVis(v){
-  ['hex-fill','hex-line','hex-state-line','hex-poi-lyr','hex-bld-lyr'].forEach(id=>{ try{ map.setLayoutProperty(id,'visibility',v?'visible':'none'); }catch(_){} });
+  ['hex-fill','hex-line','hex-state-line','hex-poi-lyr','hex-bld-lyr','hex-landuse-lyr','hex-waterway-lyr'].forEach(id=>{ try{ map.setLayoutProperty(id,'visibility',v?'visible':'none'); }catch(_){} });
 }
 const HEX_FMT=v=>v<=0?'0':v<0.01?v.toExponential(1):v<1?v.toFixed(2):v<10?v.toFixed(1):String(Math.round(v));
 
@@ -5441,9 +5533,9 @@ function hexRefresh(){
   const src=map.getSource('hex-grid');
   const clear=msg=>{ src.setData({type:'FeatureCollection',features:[]}); hexLegend(null,res); hexHint(msg,res); };
   if(z<R.minZ){
-    const bldMsg=(key==='hx_buildings'||key==='hx_pop_dasy');
+    const tileMsg=(key==='hx_buildings'||key==='hx_pop_dasy'||key==='hx_green'||key==='hx_water'||key==='hx_industrial');
     clear(R.mode==='obs'
-      ? 'H3-'+res+(bldMsg?' uses OSM building footprints':' bins OSM points')+', which load at street level. Zoom in to level 14 or closer.'
+      ? 'H3-'+res+(tileMsg?' uses OSM vector tile data':' bins OSM points')+', which load at street level. Zoom in to level 14 or closer.'
       : 'H3-'+res+' would draw too many hexes at this zoom. Zoom in, or choose a larger hex (H3-6).');
     return;
   }
@@ -5454,7 +5546,25 @@ function hexRefresh(){
   let cells; try{ cells=h3.polygonToCells([[[w-pad,s-pad],[e+pad,s-pad],[e+pad,n+pad],[w-pad,n+pad],[w-pad,s-pad]]],res,true); }catch(err){ clear('Could not build the hex grid for this view.'); return; }
   let vals;
   /* dispatch to the right compute function based on layer type */
-  if(key==='hx_buildings'){
+  if(key==='hx_green'){
+    if(R.mode==='obs'){
+      if(!map.isSourceLoaded('hex-landuse')){ hexHint('Loading OSM land-use data…',res); }
+      else hexHint('',res);
+      vals=hexObsGreen(cells,res);
+    } else { hexPrep(); vals=hexModelled(cells,res,key); hexHint('',res); }
+  } else if(key==='hx_water'){
+    if(R.mode==='obs'){
+      if(!map.isSourceLoaded('hex-waterway')){ hexHint('Loading OSM waterways…',res); }
+      else hexHint('',res);
+      vals=hexObsWater(cells,res);
+    } else { hexPrep(); vals=hexModelled(cells,res,key); hexHint('',res); }
+  } else if(key==='hx_industrial'){
+    if(R.mode==='obs'){
+      if(!map.isSourceLoaded('hex-landuse')){ hexHint('Loading OSM land-use data…',res); }
+      else hexHint('',res);
+      vals=hexObsIndustrial(cells,res);
+    } else { hexPrep(); vals=hexModelled(cells,res,key); hexHint('',res); }
+  } else if(key==='hx_buildings'){
     if(R.mode==='obs'){
       if(!map.isSourceLoaded('hex-bld')){ hexHint('Loading OSM buildings…',res); }
       else hexHint('',res);
@@ -5503,6 +5613,9 @@ function hexLegend(pos,res,nCells){
   let unit='per km²';
   if(key==='hx_pop'||key==='hx_pop_dasy'){ unit='persons/km²'; how=key==='hx_pop_dasy'?(R.mode==='obs'?'dasymetric: building-weighted from OSM tiles':'dasymetric: building-weighted from mukim data'):'uniform from census'; }
   else if(key==='hx_buildings'){ unit='buildings/km²'; how=R.mode==='obs'?'counted from OSM building footprints':'modelled from mukim building totals'; }
+  else if(key==='hx_green'){ unit='green spaces/km²'; how=R.mode==='obs'?'counted from OSM land-use polygons':'modelled from mukim green-space totals'; }
+  else if(key==='hx_water'){ unit='waterways/km²'; how=R.mode==='obs'?'counted from OSM waterway features':'modelled from mukim waterway totals'; }
+  else if(key==='hx_industrial'){ unit='industrial sites/km²'; how=R.mode==='obs'?'counted from OSM land-use polygons':'modelled from mukim industrial totals'; }
   lo.textContent=pos&&pos.length?HEX_FMT(pos[0]):'Lower';
   hi.textContent=pos&&pos.length?HEX_FMT(pos[pos.length-1]):'Higher';
   if(note) note.innerHTML='&nbsp;'+unit+' · H3-'+res+' (~'+(R.km2<1?R.km2.toFixed(2):R.km2.toFixed(1))+' km²) · '+how+(nCells?' · '+nCells.toLocaleString()+' hexes':'');
@@ -5541,6 +5654,17 @@ function hexClick(e){
       how='<div class="hx-s">Modelled from OSM building totals of: '+top+'</div>';
     }
     unit='buildings/km²';
+  } else if(key==='hx_green'||key==='hx_water'||key==='hx_industrial'){
+    const typeLabel={hx_green:'green spaces',hx_water:'waterways',hx_industrial:'industrial sites'}[key];
+    const srcLabel={hx_green:'land-use polygons',hx_water:'waterway features',hx_industrial:'land-use polygons'}[key];
+    unit=typeLabel+'/km²';
+    if(R.mode==='obs') how='<div class="hx-s">'+typeLabel.charAt(0).toUpperCase()+typeLabel.slice(1)+' counted from OSM '+srcLabel+'.</div>';
+    else {
+      const w=hexWeights(id,res), G=hexPrep();
+      const top=w.m.map((m,i)=>[G.names[m],w.n[i]]).sort((a,b)=>b[1]-a[1]).slice(0,3)
+        .map(x=>x[0].replace(/^MUKIM /,'').toLowerCase().replace(/(^|\s)\S/g,t=>t.toUpperCase())).join(', ');
+      how='<div class="hx-s">Modelled from mukim '+typeLabel+' totals of: '+top+'</div>';
+    }
   } else if(R.mode==='mod'){
     const w=hexWeights(id,res), G=hexPrep();
     const top=w.m.map((m,i)=>[G.names[m],w.n[i]]).sort((a,b)=>b[1]-a[1]).slice(0,3)
