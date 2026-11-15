@@ -822,8 +822,8 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .map-fs .tcband{display:none!important}
 /* --- Sidebar collapse --- */
 /* --- Sidebar collapse --- */
-#sbHide.sb-hide{flex:0 0 auto;display:inline-block!important;width:auto!important;font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-2);background:var(--line-2);border:1px solid var(--line);padding:3px 8px;cursor:pointer;border-radius:4px;line-height:1.2;min-width:0;text-align:center;margin-right:2px}
-#sbHide.sb-hide:hover{color:var(--ink);background:var(--line);border-color:var(--ink-3)}
+.sb-hide{flex:0 0 auto;display:inline-block;font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-2);background:var(--line-2);border:1px solid var(--line);padding:3px 8px;cursor:pointer;border-radius:4px;line-height:1.2;text-align:center;margin-right:2px;user-select:none}
+.sb-hide:hover{color:var(--ink);background:var(--line);border-color:var(--ink-3)}
 .sb-show{display:none;position:absolute;top:6px;left:6px;z-index:5;font:inherit;font-family:var(--display);font-size:13px;font-weight:700;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .sb-show:hover{color:var(--ink);border-color:var(--ink-3)}
 .maprow.sb-hidden .sidebar-col{display:none!important}
@@ -3358,6 +3358,8 @@ ctl.addEventListener('click',e=>{
 });
 function resetMap(){
   if(document.body.classList.contains('map-fs')){ document.body.classList.remove('map-fs'); const fb=document.getElementById('fsBtn'); if(fb) fb.textContent='⛶'; }
+  /* exit sidebar-hidden */
+  const mr=document.querySelector('.maprow'); if(mr) mr.classList.remove('sb-hidden');
   if(typeof window.__mcaExit==='function') window.__mcaExit();
   activeProject=null; sel=null; selB=null; indKey=null; layer='RPI_core'; stateF=''; layerChosen=false;
   selMukim=null; compMukim=null; mkComparing=false;
@@ -3371,6 +3373,10 @@ function resetMap(){
   if(typeof cs!=='undefined') cs.value='';
   if(typeof syncGeoMode==='function') syncGeoMode();
   markActiveProject(null);
+  /* clear level filter */
+  if(typeof lvFilter!=='undefined') lvFilter=null;
+  document.querySelectorAll('.gchdr span[data-lv]').forEach(s=>s.classList.remove('active'));
+  const lpEl=document.getElementById('lpanel'); if(lpEl) lpEl.classList.remove('lv-filtered');
   paint(); renderTable(); if(typeof fillDistricts==='function'){fillDistricts();} if(typeof fillMukims==='function'){fillMukims();}
   document.getElementById('statBox').style.display='none';
   document.getElementById('layerInfo').style.display='none';
@@ -3381,6 +3387,7 @@ function resetMap(){
   map.fitBounds(MY_BOUNDS,{padding:20,duration:400});
   const rt0=document.getElementById('regTog');
   if(rt0) rt0.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.r==='all')));
+  setTimeout(()=>{ if(typeof map!=='undefined') map.resize(); },100);
 }
 document.getElementById('resetBtn').addEventListener('click',resetMap);
 document.getElementById('clearSel')?.addEventListener('click',resetMap);
@@ -5760,7 +5767,7 @@ function lrowHtml(r){
 }
 const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice(0,i),k=str.slice(i+1);return {t,k,agg:k.startsWith('x_')};};
 (function buildPanel(){
-  let h='<div class="lp-top"><button type="button" class="sb-hide" id="sbHide" title="Hide layer panel">&times; Hide</button><div class="lp-h">Project</div>'+
+  let h='<div class="lp-top"><span role="button" tabindex="0" class="sb-hide" id="sbHide" title="Hide layer panel">&times; Hide</span><div class="lp-h">Project</div>'+
         '<button type="button" class="lp-geotog" id="lvTog" title="Show hex / mukim / district / state availability">Levels ▸</button>'+
         '<span class="gchdr"><span class="lv-clear" id="lvClear" title="Remove level filter">Clear filter</span><span class="hxh" data-lv="hex" title="Click to filter: show only layers with hex data">HEX<button type="button" class="hxcaret" id="hexCaret" aria-expanded="false" aria-label="Show hex size options" title="Hex size options"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><span data-lv="mukim" title="Click to filter: show only layers with mukim data">MK</span><span data-lv="district" title="Click to filter: show only layers with district data">DIST</span><span data-lv="state" title="Click to filter: show only layers with state data">ST</span></span></div>';
   const hasD=k=>DLAYERS.some(l=>l.k===k);
@@ -8145,7 +8152,8 @@ const _tblCard=document.getElementById('tbl')?.closest('.card'); if(_tblCard) _t
     else mr.classList.toggle('sb-hidden',!show);
     setTimeout(()=>{ if(typeof map!=='undefined') map.resize(); },50);
   }
-  document.getElementById('sbHide')?.addEventListener('click',()=>toggleSb(false));
+  const sbH=document.getElementById('sbHide');
+  if(sbH){ sbH.addEventListener('click',()=>toggleSb(false)); sbH.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggleSb(false);}}); }
   document.getElementById('sbShow')?.addEventListener('click',()=>toggleSb(true));
 })();
 /* --- Fullscreen map toggle --- */
