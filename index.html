@@ -2582,6 +2582,15 @@ dataOpacitySlider.addEventListener('input',()=>{
   if(map.getLayer('state-fill')) map.setPaintProperty('state-fill','fill-opacity',v*0.75);
   if(map.getLayer('demo-fill')) map.setPaintProperty('demo-fill','fill-opacity',v*0.75);
   if(map.getLayer('demo-state-fill')) map.setPaintProperty('demo-state-fill','fill-opacity',v*0.75);
+  /* Custom Analysis layers */
+  if(map.getLayer('iso-fill')) map.setPaintProperty('iso-fill','fill-opacity',v*0.4);
+  if(map.getLayer('iso-line')) map.setPaintProperty('iso-line','line-opacity',v);
+  if(map.getLayer('buf-fill')) map.setPaintProperty('buf-fill','fill-opacity',v*0.25);
+  if(map.getLayer('buf-line')) map.setPaintProperty('buf-line','line-opacity',v);
+  if(map.getLayer('gap-fill')) map.setPaintProperty('gap-fill','fill-opacity',v*0.4);
+  if(map.getLayer('gap-line')) map.setPaintProperty('gap-line','line-opacity',v);
+  if(map.getLayer('hex-grid')) map.setPaintProperty('hex-grid','fill-opacity',v*0.55);
+  if(map.getLayer('hex-line')) map.setPaintProperty('hex-line','line-opacity',v*0.5);
 });
 
 /* Tile error indicator (success/loading labels removed — they overlap Story Maps) */
