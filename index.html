@@ -3353,6 +3353,7 @@ ctl.addEventListener('click',e=>{
   else { resetMap(); }
 });
 function resetMap(){
+  if(document.body.classList.contains('map-fs')){ document.body.classList.remove('map-fs'); const fb=document.getElementById('fsBtn'); if(fb) fb.textContent='⛶'; }
   if(typeof window.__mcaExit==='function') window.__mcaExit();
   activeProject=null; sel=null; selB=null; indKey=null; layer='RPI_core'; stateF=''; layerChosen=false;
   selMukim=null; compMukim=null; mkComparing=false;
