@@ -797,7 +797,12 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .gchdr .hxcaret:hover{background:var(--accent-soft);color:var(--ink)}
 .gchdr .hxcaret svg{transition:transform .2s}
 .gchdr .hxcaret[aria-expanded=true] svg{transform:rotate(180deg)}
-.gchdr span{width:30px;text-align:center;font-family:var(--display);font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--ink-2)}
+.gchdr span{width:30px;text-align:center;font-family:var(--display);font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--ink-2);cursor:pointer;border-radius:3px;padding:2px 0;transition:background .15s,color .15s}
+.gchdr span:hover{background:var(--accent-soft);color:var(--ink)}
+.gchdr span.lv-active{background:var(--accent);color:#fff}
+.lv-filtered .lrow.lv-hidden{display:none}
+.lv-filter-tag{display:none;font-size:10px;color:var(--accent);margin-left:6px;font-weight:600;cursor:pointer;white-space:nowrap}
+.lv-filtered .lv-filter-tag{display:inline}
 .lrow{display:flex;align-items:center;min-width:0}
 .lp .lrow .lbtn{flex:1 1 auto;width:auto;min-width:0}
 .lp .lrow.on .lbtn{background:var(--accent-soft);color:var(--ink);font-weight:600}
@@ -5727,7 +5732,8 @@ const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice
 (function buildPanel(){
   let h='<div class="lp-top"><div class="lp-h">Project</div>'+
         '<button type="button" class="lp-geotog" id="lvTog" title="Show hex / mukim / district / state availability">Levels ▸</button>'+
-        '<span class="gchdr"><span class="hxh">HEX<button type="button" class="hxcaret" id="hexCaret" aria-expanded="false" aria-label="Show hex size options" title="Hex size options"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><span aria-hidden="true">MK</span><span aria-hidden="true">DIST</span><span aria-hidden="true">ST</span></span></div>';
+        '<span class="lv-filter-tag" id="lvFilterTag" title="Click to clear filter">✕ filtered</span>'+
+        '<span class="gchdr"><span class="hxh" data-lv="hex" title="Click to filter: show only layers with hex data">HEX<button type="button" class="hxcaret" id="hexCaret" aria-expanded="false" aria-label="Show hex size options" title="Hex size options"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><span data-lv="mukim" title="Click to filter: show only layers with mukim data">MK</span><span data-lv="district" title="Click to filter: show only layers with district data">DIST</span><span data-lv="state" title="Click to filter: show only layers with state data">ST</span></span></div>';
   const hasD=k=>DLAYERS.some(l=>l.k===k);
   /* --- Demography: one row per indicator, mukim + district + state merged --- */
   const MERGE={pop:'mk_pop',pd:'mk_pd',sr:'mk_sr',yp:'mk_age014',wp:'mk_age1564',ep:'mk_age65',dr:'mk_dep',
@@ -5926,6 +5932,39 @@ function activateLayerRow(r,lv){
   });
   /* opening a project slides the level columns out */
   lp.addEventListener('toggle',e=>{ const d=e.target; if(d.classList&&d.classList.contains('hdr')&&d.open&&(d.classList.contains('demo-det')||d.classList.contains('rpi-det'))) setGeoOpen(true); },true);
+
+  /* ---------- Level column filter ---------- */
+  let lvFilter=null; /* null = no filter; 'hex'|'mukim'|'district'|'state' */
+  const GEO_LV_IX={hex:0,mukim:1,district:2,state:3};
+  function applyLvFilter(lv){
+    const prev=lvFilter; lvFilter=(prev===lv)?null:lv;
+    /* toggle header highlights */
+    lp.querySelectorAll('.gchdr [data-lv]').forEach(el=>el.classList.toggle('lv-active',el.dataset.lv===lvFilter));
+    /* toggle filtered class on panel */
+    lp.classList.toggle('lv-filtered',!!lvFilter);
+    /* show/hide rows */
+    lp.querySelectorAll('.lrow').forEach(el=>{
+      if(!lvFilter){ el.classList.remove('lv-hidden'); return; }
+      const gcs=el.querySelectorAll('.gc');
+      const idx=GEO_LV_IX[lvFilter];
+      const gc=gcs[idx];
+      el.classList.toggle('lv-hidden',!gc||gc.classList.contains('na'));
+    });
+  }
+  /* Click on header column labels */
+  const gchdr=lp.querySelector('.gchdr');
+  if(gchdr) gchdr.addEventListener('click',e=>{
+    const span=e.target.closest('[data-lv]');
+    if(!span) return;
+    /* Don't intercept hexCaret clicks */
+    if(e.target.closest('.hxcaret')) return;
+    e.stopPropagation();
+    applyLvFilter(span.dataset.lv);
+    setGeoOpen(true);
+  });
+  /* Click on filter tag to clear */
+  const ftag=document.getElementById('lvFilterTag');
+  if(ftag) ftag.addEventListener('click',e=>{ e.stopPropagation(); applyLvFilter(lvFilter); });
 })();
 let activeProject=null;
 /* Method card starts hidden via inline style="display:none" in HTML */
