@@ -797,9 +797,13 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .gchdr .hxcaret:hover{background:var(--accent-soft);color:var(--ink)}
 .gchdr .hxcaret svg{transition:transform .2s}
 .gchdr .hxcaret[aria-expanded=true] svg{transform:rotate(180deg)}
+.gchdr{position:relative}
 .gchdr span{width:30px;text-align:center;font-family:var(--display);font-size:9px;font-weight:700;letter-spacing:.04em;color:var(--ink-2);cursor:pointer;border-radius:3px;transition:background .15s,color .15s;box-sizing:border-box}
 .gchdr span:hover{background:var(--accent-soft);color:var(--ink)}
 .gchdr span.lv-active{background:var(--accent);color:#fff}
+.lv-clear{display:none;position:absolute;bottom:100%;right:0;left:0;text-align:center;font-family:var(--display);font-size:9px;font-weight:700;letter-spacing:.03em;color:var(--accent);cursor:pointer;padding-bottom:2px;white-space:nowrap}
+.lv-clear:hover{text-decoration:underline}
+.lv-filtered .lv-clear{display:block}
 .lv-filtered .lrow.lv-hidden{display:none}
 .lv-filtered .lp-geotog{border-color:var(--accent);color:var(--accent)}
 .lrow{display:flex;align-items:center;min-width:0}
@@ -5731,7 +5735,7 @@ const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice
 (function buildPanel(){
   let h='<div class="lp-top"><div class="lp-h">Project</div>'+
         '<button type="button" class="lp-geotog" id="lvTog" title="Show hex / mukim / district / state availability">Levels ▸</button>'+
-        '<span class="gchdr"><span class="hxh" data-lv="hex" title="Click to filter: show only layers with hex data">HEX<button type="button" class="hxcaret" id="hexCaret" aria-expanded="false" aria-label="Show hex size options" title="Hex size options"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><span data-lv="mukim" title="Click to filter: show only layers with mukim data">MK</span><span data-lv="district" title="Click to filter: show only layers with district data">DIST</span><span data-lv="state" title="Click to filter: show only layers with state data">ST</span></span></div>';
+        '<span class="gchdr"><span class="lv-clear" id="lvClear" title="Remove level filter">Clear filter</span><span class="hxh" data-lv="hex" title="Click to filter: show only layers with hex data">HEX<button type="button" class="hxcaret" id="hexCaret" aria-expanded="false" aria-label="Show hex size options" title="Hex size options"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><span data-lv="mukim" title="Click to filter: show only layers with mukim data">MK</span><span data-lv="district" title="Click to filter: show only layers with district data">DIST</span><span data-lv="state" title="Click to filter: show only layers with state data">ST</span></span></div>';
   const hasD=k=>DLAYERS.some(l=>l.k===k);
   /* --- Demography: one row per indicator, mukim + district + state merged --- */
   const MERGE={pop:'mk_pop',pd:'mk_pd',sr:'mk_sr',yp:'mk_age014',wp:'mk_age1564',ep:'mk_age65',dr:'mk_dep',
@@ -5951,7 +5955,13 @@ let lvFilter=null; /* null = no filter; 'hex'|'mukim'|'district'|'state' */
   }
   /* Click on header column labels */
   const gchdr=lp.querySelector('.gchdr');
+  const lvClearBtn=lp.querySelector('#lvClear');
+  if(lvClearBtn) lvClearBtn.addEventListener('click',e=>{
+    e.stopPropagation();
+    if(lvFilter) applyLvFilter(lvFilter); /* toggle off */
+  });
   if(gchdr) gchdr.addEventListener('click',e=>{
+    if(e.target.closest('#lvClear')) return;
     const span=e.target.closest('[data-lv]');
     if(!span) return;
     /* Don't intercept hexCaret clicks */
