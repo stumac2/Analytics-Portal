@@ -1143,7 +1143,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
     <hr>
     <button type="button" role="menuitem" data-dl="xlsx"><span class="fmt">XLSX</span><span>Full workbook<span class="what"><br>Scores, indicator definitions, normalised and raw values</span></span></button>
     <button type="button" role="menuitem" data-dl="csv"><span class="fmt">CSV</span><span>District scores<span class="what"><br>160 districts, domains and composites</span></span></button>
-    <button type="button" role="menuitem" data-dl="csvstate"><span class="fmt">CSV</span><span>State scores<span class="what"><br>16 states, population-weighted</span></span></button>
+    <button type="button" role="menuitem" data-dl="csvstate"><span class="fmt">CSV</span><span>State scores<span class="what"><br>16 states &amp; federal territories, population-weighted</span></span></button>
     <hr>
     <button type="button" role="menuitem" data-dl="shp"><span class="fmt">SHP</span><span>Shapefile<span class="what"><br>Zipped .shp/.shx/.dbf/.prj, WGS 84</span></span></button>
     <button type="button" role="menuitem" data-dl="geojson"><span class="fmt">GEOJSON</span><span>Boundaries and scores<span class="what"><br>Saved as .json &mdash; no 10-character field limit</span></span></button>
@@ -3915,7 +3915,7 @@ const GUIDE={
   ask:['Which districts are least resilient overall, and should be looked at first?',
        'Is a low score broad-based, or driven by one weak domain?',
        'Where does a district sit against its neighbours and the rest of its state? State averages hide the differences inside a state.'],
-  gap:'Malaysia has no single, consistent district-level measure that puts social, economic and infrastructure conditions side by side. Most comparable data is reported by state, which hides gaps inside a state.'},
+  gap:'Malaysia has no single, consistent district-level measure that puts social, economic and infrastructure conditions side by side. Most comparable data is reported by state or federal territory, which hides gaps within each division.'},
  Capacity:{name:'Capacity Index',
   lede:'What a district can draw on: income, savings, education, labour-market strength, utilities, services and social ties. Higher means more resources.',
   ask:['Is a district’s problem a shortage of resources rather than high exposure?',
@@ -4185,7 +4185,7 @@ function renderFindings(){
     <li><b>Resilience is uneven and clustered.</b> District scores run from ${bot.RPI_core.toFixed(2)} (${bot.name}, ${bot.state}) to ${top.RPI_core.toFixed(2)} (${top.name}, ${top.state}). ${bqTop2.map(x=>x[0]).join(' and ')} together hold ${bqTop2n} of the ${q} lowest-scoring districts.</li>
     <li><b>${weakS[0][0]} is the most common weak point.</b> It is the lowest domain in ${weakS[0][1]} of ${n} districts (${pctS(weakS[0][1])}), against ${weakS[1][0]} in ${weakS[1][1]}, ${weakS[2][0]} in ${weakS[2][1]} and ${weakS[3][0]} in ${weakS[3][1]}. Where a district needs help therefore differs from place to place.</li>
     <li><b>The constraint is more often capacity than exposure.</b> In ${capLow} of ${n} districts (${pctS(capLow)}), the capacity score is below the vulnerability score. These places are short of resources, services and income more than they are exposed.</li>
-    <li><b>State averages hide large gaps.</b> Inside ${sp.st}, scores run from ${sp.lo.RPI_core.toFixed(2)} (${sp.lo.name}) to ${sp.hi.RPI_core.toFixed(2)} (${sp.hi.name}), a spread of ${sp.d.toFixed(2)}. At state level, ${st[0].state} ranks first and ${st[st.length-1].state} last.</li>
+    <li><b>State and FT averages hide large gaps.</b> Inside ${sp.st}, scores run from ${sp.lo.RPI_core.toFixed(2)} (${sp.lo.name}) to ${sp.hi.RPI_core.toFixed(2)} (${sp.hi.name}), a spread of ${sp.d.toFixed(2)}. At state/FT level, ${st[0].state} ranks first and ${st[st.length-1].state} last.</li>
    </ul></div>
    <div><h3>How to use it</h3><ul>
     <li><b>Prioritise:</b> start with the bottom quarter on the headline map, then filter by state to find the weakest districts.</li>
@@ -4358,7 +4358,7 @@ function narrative(A,B){
       out+=`<p>Of ${A.state}'s ${sib.length} districts, ${A.name} ranks <strong>${ORD(pos)}</strong>. `+
            `The state's strongest is ${sib[0].name} (${sib[0].RPI_core.toFixed(3)}) and its weakest ${sib[sib.length-1].name} (${sib[sib.length-1].RPI_core.toFixed(3)}), `+
            `a spread of ${(sib[0].RPI_core-sib[sib.length-1].RPI_core).toFixed(3)}. `+
-           `${A.state} itself ranks ${ORD(SD.scores[A.state].rank)} of 16 states.</p>`;
+           `${A.state} itself ranks ${ORD(SD.scores[A.state].rank)} of 16 states and federal territories.</p>`;
     }
     const nb=(ADJ.district[A.code]||[]).map(c=>rows.find(r=>r.code===c)).filter(Boolean);
     if(nb.length){
@@ -7238,7 +7238,7 @@ let MCA_ON=false;          /* analysis mode active */
     const dists=rows.slice().sort((a,b)=>a.name.localeCompare(b.name));
     return `<p class="mca-lead">Which part of the country is the analysis about? Indicators are rescaled within this extent, so a score is relative to the places you are comparing.</p>`+
       `<div class="mca-opts">`+
-      [['all','All of Malaysia','160 districts, 16 states'],
+      [['all','All of Malaysia','160 districts, 13 states &amp; 3 federal territories'],
        ['pen','Peninsular Malaysia',''],
        ['east','East Malaysia','Sabah, Sarawak, Labuan']].map(([k,t,sub])=>
         `<button type="button" class="mca-opt${S.extent.kind===k?' on':''}" data-ex="${k}">`+
@@ -7255,7 +7255,7 @@ let MCA_ON=false;          /* analysis mode active */
     const u=k=>{ const keep=S.level; S.level=k; const n=unitsInScope().length; S.level=keep; return n; };
     return `<p class="mca-lead">At what geographic level should the analysis run? This decides which indicators are available.</p>`+
       `<div class="mca-opts">`+
-      [['state','State','16 states · all RPI indicators and demography'],
+      [['state','State','13 states &amp; 3 federal territories · all RPI indicators and demography'],
        ['district','District','160 districts · all RPI indicators and demography'],
        ['mukim','Mukim','1,856 mukims · the five mukim-native measures only']].map(([k,t,sub])=>
         `<button type="button" class="mca-opt${S.level===k?' on':''}" data-lv="${k}">`+
