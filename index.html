@@ -821,11 +821,14 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .map-fs .mapcol-wrap>.card:not(.mapbox),.map-fs .mapcol-wrap>section,.map-fs footer,.map-fs .notes{display:none!important}
 .map-fs .tcband{display:none!important}
 /* --- Sidebar collapse --- */
-/* sb-tog uses .fs-btn styling from the header row */
+/* --- Sidebar collapse --- */
+.sb-hide{flex:0 0 auto;font:inherit;font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-3);background:transparent;border:0;padding:2px 6px;cursor:pointer;border-radius:4px;line-height:1}
+.sb-hide:hover{color:var(--ink);background:var(--line-2)}
+.sb-show{display:none;position:absolute;top:6px;left:6px;z-index:5;font:inherit;font-family:var(--display);font-size:13px;font-weight:700;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.sb-show:hover{color:var(--ink);border-color:var(--ink-3)}
 .sb-hidden .sidebar-col{display:none!important}
 .sb-hidden .maprow{grid-template-columns:minmax(0,1fr)!important}
-.sb-hidden .sb-tog span::before{content:'☰ Layers'}
-.maprow:not(.sb-hidden) .sb-tog span::before{content:'✕ Layers'}
+.sb-hidden .sb-show{display:block}
 .lrow{display:flex;align-items:center;min-width:0}
 .lp .lrow .lbtn{flex:1 1 auto;width:auto;min-width:0}
 .lp .lrow.on .lbtn{background:var(--accent-soft);color:var(--ink);font-weight:600}
@@ -1207,7 +1210,6 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
         </div>
       </div>
       <button type="button" class="dlmini" id="dlMap" data-dltrig="bundle,selgeojson,geojson,shp,xlsx,pdf" aria-haspopup="true" aria-expanded="false">Download</button>
-      <button type="button" class="fs-btn" id="sbTog" title="Toggle layer panel"><span></span></button>
       <button type="button" class="fs-btn" id="fsBtn" title="Toggle fullscreen map">⛶</button>
       </div>
       <div class="legend">
@@ -1219,7 +1221,9 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
       </div>
     </div>
     <div class="card-b" style="padding:10px 12px 14px">
-      <div id="mapHost" style="position:relative"></div>
+      <div id="mapHost" style="position:relative">
+        <button type="button" class="sb-show" id="sbShow" title="Show layer panel">☰</button>
+      </div>
     </div>
     <div class="stats" id="statBox" aria-live="polite"></div>
     <details class="linfo" id="layerInfo"></details>
@@ -5756,7 +5760,7 @@ function lrowHtml(r){
 }
 const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice(0,i),k=str.slice(i+1);return {t,k,agg:k.startsWith('x_')};};
 (function buildPanel(){
-  let h='<div class="lp-top"><div class="lp-h">Project</div>'+
+  let h='<div class="lp-top"><button type="button" class="sb-hide" id="sbHide" title="Hide layer panel">✕</button><div class="lp-h">Project</div>'+
         '<button type="button" class="lp-geotog" id="lvTog" title="Show hex / mukim / district / state availability">Levels ▸</button>'+
         '<span class="gchdr"><span class="lv-clear" id="lvClear" title="Remove level filter">Clear filter</span><span class="hxh" data-lv="hex" title="Click to filter: show only layers with hex data">HEX<button type="button" class="hxcaret" id="hexCaret" aria-expanded="false" aria-label="Show hex size options" title="Hex size options"><svg viewBox="0 0 10 6" width="10" height="6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span><span data-lv="mukim" title="Click to filter: show only layers with mukim data">MK</span><span data-lv="district" title="Click to filter: show only layers with district data">DIST</span><span data-lv="state" title="Click to filter: show only layers with state data">ST</span></span></div>';
   const hasD=k=>DLAYERS.some(l=>l.k===k);
@@ -8135,12 +8139,14 @@ const _tblCard=document.getElementById('tbl')?.closest('.card'); if(_tblCard) _t
 <script>
 /* --- Sidebar collapse toggle --- */
 (function(){
-  const btn=document.getElementById('sbTog'); if(!btn) return;
   const mr=document.querySelector('.maprow'); if(!mr) return;
-  btn.addEventListener('click',()=>{
-    mr.classList.toggle('sb-hidden');
+  function toggleSb(show){
+    if(show===undefined) mr.classList.toggle('sb-hidden');
+    else mr.classList.toggle('sb-hidden',!show);
     setTimeout(()=>{ if(typeof map!=='undefined') map.resize(); },50);
-  });
+  }
+  document.getElementById('sbHide')?.addEventListener('click',()=>toggleSb(false));
+  document.getElementById('sbShow')?.addEventListener('click',()=>toggleSb(true));
 })();
 /* --- Fullscreen map toggle --- */
 (function(){
