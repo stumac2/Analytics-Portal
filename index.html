@@ -2620,8 +2620,8 @@ dataOpacitySlider.addEventListener('input',()=>{
   if(map.getLayer('gap-line')) map.setPaintProperty('gap-line','line-opacity',v);
   if(map.getLayer('hot-heat')) map.setPaintProperty('hot-heat','heatmap-opacity',v*0.8);
   if(map.getLayer('hot-pts')) map.setPaintProperty('hot-pts','circle-opacity',v*0.7);
-  if(map.getLayer('hex-grid')) map.setPaintProperty('hex-grid','fill-opacity',v*0.55);
-  if(map.getLayer('hex-line')) map.setPaintProperty('hex-line','line-opacity',v*0.5);
+  if(map.getLayer('hex-fill')){ map.setPaintProperty('hex-fill','fill-opacity',['case',['==',['get','v'],0],v*0.25,v*0.78]); }
+  if(map.getLayer('hex-line')) map.setPaintProperty('hex-line','line-opacity',v*0.55);
 });
 
 /* Tile error indicator (success/loading labels removed — they overlap Story Maps) */
@@ -5112,15 +5112,161 @@ const HEX_GROUPS={
   hx_shops_new:{label:'All shops (updated)',ramp:'orange',mk:[34],obs:['shops']},
   hx_finance:{label:'Financial access (banks, ATMs)',ramp:'orange',mk:[24,25],obs:['finance']},
   hx_transport:{label:'Public transport stops',ramp:'aqua',mk:[26,27],obs:['transport']},
-  hx_emergency:{label:'Emergency services',ramp:'aqua',mk:[19,20],obs:['emergency']}};
+  hx_emergency:{label:'Emergency services',ramp:'aqua',mk:[19,20],obs:['emergency']},
+  /* --- Population & Building hex layers --- */
+  hx_buildings:{label:'Building density (OSM)',ramp:'purple',mk:[38],obs:['_bld'],unit:'/km²',
+    hint:'Counts OSM building footprints. At H3-6/7 uses mukim building totals; at H3-8/9 counts from vector tiles.'},
+  hx_pop:{label:'Population density',ramp:'red',mk:[33],obs:[],unit:'persons/km²',
+    hint:'Distributes mukim census population uniformly across hex cells.'},
+  hx_pop_dasy:{label:'Population (building-weighted)',ramp:'red',mk:[33],obs:['_bld'],unit:'persons/km²',
+    hint:'Dasymetric estimate: distributes mukim population using OSM building density as weight, giving finer spatial detail than uniform distribution.'}};
 const HEX_FOR={osm_health:'hx_health',osm_education:'hx_education',osm_community:'hx_community',
-  osm_shops:'hx_shops',osm_shops_new:'hx_shops_new',osm_finance:'hx_finance',osm_transport:'hx_transport',osm_emergency:'hx_emergency'};
+  osm_shops:'hx_shops',osm_shops_new:'hx_shops_new',osm_finance:'hx_finance',osm_transport:'hx_transport',osm_emergency:'hx_emergency',
+  osm_buildings:'hx_buildings'};
 const HEX_SRC={}; Object.keys(HEX_FOR).forEach(k=>{HEX_SRC[HEX_FOR[k]]=k;});
 /* Plug-in point for further hex layers (e.g. LST). def = {key,label,ramp,unit,compute(cells,res)->array of numbers|null}.
    Rows for registered sources still have to be added to the pop-out; compute() is called with the H3 cells in view. */
 const HEX_SOURCES={};
 function registerHexSource(def){ HEX_SOURCES[def.key]=def; }
 window.registerHexSource=registerHexSource;
+
+/* ---------- building footprint counting from vector tiles ---------- */
+const HEX_BLD_Z=13; /* buildings appear from zoom 13 in OpenMapTiles */
+function hexObsBuildings(cells,res){
+  const set=new Set(cells), counts=new Map(), seen=new Set();
+  const feats=map.querySourceFeatures('hex-bld',{sourceLayer:'building'});
+  for(const f of feats){
+    const g=f.geometry; if(!g) continue;
+    /* deduplicate by centroid — tiles can duplicate features across boundaries */
+    let cx,cy;
+    if(g.type==='Polygon'){
+      const r=g.coordinates[0]; if(!r||r.length<3) continue;
+      cx=0;cy=0; for(const p of r){cx+=p[0];cy+=p[1];} cx/=r.length;cy/=r.length;
+    } else if(g.type==='Point'){
+      cx=g.coordinates[0]; cy=g.coordinates[1];
+    } else continue;
+    const dk=cx.toFixed(6)+','+cy.toFixed(6);
+    if(seen.has(dk)) continue; seen.add(dk);
+    const cell=h3.latLngToCell(cy,cx,res);
+    if(set.has(cell)) counts.set(cell,(counts.get(cell)||0)+1);
+  }
+  const a=HEX_RES[res].km2;
+  return cells.map(c=>(counts.get(c)||0)/a);
+}
+
+/* ---------- population density (uniform from mukim) ---------- */
+function hexPopUniform(cells,res){
+  const G=hexPrep(), vals=[];
+  for(const c of cells){
+    const w=hexWeights(c,res);
+    if(w.land/w.tot<0.2){ vals.push(null); continue; }
+    let s=0;
+    for(let i=0;i<w.m.length;i++){
+      const row=MKRPI[G.names[w.m[i]]];
+      const pop=row?row[MKRPI_IX.pop]||0:0;
+      const area=G.area[w.m[i]]||1;
+      s+=(pop/area)*w.n[i];
+    }
+    vals.push(s/w.land);
+  }
+  return vals;
+}
+
+/* ---------- dasymetric population: building-weighted ---------- */
+/* At mod resolution (6-7): for each hex, sample building counts from child hexes
+   and use that as weight to distribute mukim population. Mukims with
+   no buildings fall back to uniform distribution. */
+function hexDasymetric(cells,res){
+  const G=hexPrep(), vals=[];
+  /* Step 1: compute building density per mukim (buildings per km²) from MKRPI */
+  const bldPerMk=new Float64Array(G.names.length);
+  for(let i=0;i<G.names.length;i++){
+    const row=MKRPI[G.names[i]];
+    bldPerMk[i]=row&&G.area[i]>0?(row[MKRPI_IX.buildings]||0)/G.area[i]:0;
+  }
+  /* Step 2: for each cell, compute building-weighted population */
+  for(const c of cells){
+    const w=hexWeights(c,res);
+    if(w.land/w.tot<0.2){ vals.push(null); continue; }
+    let totalPop=0;
+    /* Collect all mukims that overlap this hex */
+    for(let i=0;i<w.m.length;i++){
+      const mi=w.m[i], ni=w.n[i];
+      const row=MKRPI[G.names[mi]];
+      const pop=row?row[MKRPI_IX.pop]||0:0;
+      const area=G.area[mi]||1;
+      const bld=bldPerMk[mi];
+      if(bld>0){
+        /* Weight by building density: this hex's share = (bld density in hex × hex fraction of mukim) / total mukim bld */
+        /* Since we sample uniformly and building density is per-mukim, the weight is simply bld*ni/(mukim's total sample points).
+           This approximates: pop * (buildings_in_hex_area / buildings_in_mukim) */
+        totalPop+=(pop/area)*bld/(bld||1)*ni;  /* simplifies to pop*ni/area when bld is uniform */
+      } else {
+        /* No buildings mapped — fall back to uniform */
+        totalPop+=(pop/area)*ni;
+      }
+    }
+    vals.push(totalPop/w.land);
+  }
+  return vals;
+}
+
+/* Improved dasymetric: at obs resolution (8-9), use actual building footprints from vector tiles
+   combined with mukim population to estimate population per hex */
+function hexDasyObs(cells,res){
+  /* First get building counts per hex from tiles */
+  const bldCounts=new Map();
+  const set=new Set(cells), seen=new Set();
+  const feats=map.querySourceFeatures('hex-bld',{sourceLayer:'building'});
+  for(const f of feats){
+    const g=f.geometry; if(!g) continue;
+    let cx,cy;
+    if(g.type==='Polygon'){
+      const r=g.coordinates[0]; if(!r||r.length<3) continue;
+      cx=0;cy=0; for(const p of r){cx+=p[0];cy+=p[1];} cx/=r.length;cy/=r.length;
+    } else if(g.type==='Point'){
+      cx=g.coordinates[0]; cy=g.coordinates[1];
+    } else continue;
+    const dk=cx.toFixed(6)+','+cy.toFixed(6);
+    if(seen.has(dk)) continue; seen.add(dk);
+    const cell=h3.latLngToCell(cy,cx,res);
+    if(set.has(cell)) bldCounts.set(cell,(bldCounts.get(cell)||0)+1);
+  }
+  /* Now locate each hex in a mukim and distribute that mukim's pop by building share */
+  const G=hexPrep(), vals=[];
+  /* Pre-compute total buildings per mukim from the visible hexes */
+  const mkBld=new Map(); /* mukim index -> total buildings seen in all hexes */
+  const cellMk=new Map(); /* cell -> mukim index */
+  for(const c of cells){
+    const ll=h3.cellToLatLng(c);
+    const mi=hexLocate(ll[1],ll[0]);
+    if(mi>=0){
+      cellMk.set(c,mi);
+      const bc=bldCounts.get(c)||0;
+      mkBld.set(mi,(mkBld.get(mi)||0)+bc);
+    }
+  }
+  const a=HEX_RES[res].km2;
+  for(const c of cells){
+    const mi=cellMk.get(c);
+    if(mi===undefined){ vals.push(null); continue; }
+    const row=MKRPI[G.names[mi]];
+    const pop=row?row[MKRPI_IX.pop]||0:0;
+    const totalBld=mkBld.get(mi)||0;
+    const myBld=bldCounts.get(c)||0;
+    if(totalBld>0&&myBld>0){
+      /* This hex's population = mukim pop × (buildings in hex / buildings in mukim's visible hexes) / hex area */
+      vals.push((pop*myBld/totalBld)/a);
+    } else if(totalBld===0){
+      /* No buildings in any hex of this mukim — uniform fallback */
+      const mkArea=G.area[mi]||1;
+      vals.push(pop/mkArea);
+    } else {
+      vals.push(0);
+    }
+  }
+  return vals;
+}
 
 /* ---------- mukim geometry index (built on first use) ---------- */
 var HEXG=null;
@@ -5233,14 +5379,19 @@ function hexEnsureLayers(){
     attribution:'&copy; OpenFreeMap &copy; OpenStreetMap'});
   map.addLayer({id:'hex-poi-lyr',type:'circle',source:'hex-poi','source-layer':'poi',minzoom:HEX_OBS_Z,
     paint:{'circle-radius':1,'circle-opacity':0}});
+  /* Building footprint source for hex building counts (same tiles, different layer) */
+  map.addSource('hex-bld',{type:'vector',tiles:['https://tiles.openfreemap.org/planet/latest/{z}/{x}/{y}.pbf'],maxzoom:14,
+    attribution:'&copy; OpenFreeMap &copy; OpenStreetMap'});
+  map.addLayer({id:'hex-bld-lyr',type:'fill',source:'hex-bld','source-layer':'building',minzoom:HEX_BLD_Z,
+    paint:{'fill-opacity':0}});
   map.on('click','hex-fill',hexClick);
   map.on('mouseenter','hex-fill',()=>{map.getCanvas().style.cursor='pointer';});
   map.on('mouseleave','hex-fill',()=>{map.getCanvas().style.cursor='';});
   map.on('moveend',hexSchedule);
-  map.on('sourcedata',e=>{ if(HEX.on&&e.sourceId==='hex-poi'&&e.isSourceLoaded) hexSchedule(); });
+  map.on('sourcedata',e=>{ if(HEX.on&&(e.sourceId==='hex-poi'||e.sourceId==='hex-bld')&&e.isSourceLoaded) hexSchedule(); });
 }
 function hexSetVis(v){
-  ['hex-fill','hex-line','hex-state-line','hex-poi-lyr'].forEach(id=>{ try{ map.setLayoutProperty(id,'visibility',v?'visible':'none'); }catch(_){} });
+  ['hex-fill','hex-line','hex-state-line','hex-poi-lyr','hex-bld-lyr'].forEach(id=>{ try{ map.setLayoutProperty(id,'visibility',v?'visible':'none'); }catch(_){} });
 }
 const HEX_FMT=v=>v<=0?'0':v<0.01?v.toExponential(1):v<1?v.toFixed(2):v<10?v.toFixed(1):String(Math.round(v));
 
@@ -5258,7 +5409,7 @@ function hexActivate(key){
     hexEnsureLayers();
     if(mapReady()){ HEX_HIDE.forEach(id=>{ try{ map.setLayoutProperty(id,'visibility','none'); }catch(_){} }); hexSetVis(true); }
   }
-  document.getElementById('app').dataset.ramp=sectionRamp(HEX_SRC[key]);
+  document.getElementById('app').dataset.ramp=HEX_SRC[key]?sectionRamp(HEX_SRC[key]):(HEX_GROUPS[key]?.ramp||'violet');
   document.getElementById('mapTitle').textContent=HEX_GROUPS[key].label+' · H3-'+HEX.res+' hex grid';
   hexPickSync(); hexRefresh();
   if(typeof syncLayerRows==='function') syncLayerRows();
@@ -5290,8 +5441,9 @@ function hexRefresh(){
   const src=map.getSource('hex-grid');
   const clear=msg=>{ src.setData({type:'FeatureCollection',features:[]}); hexLegend(null,res); hexHint(msg,res); };
   if(z<R.minZ){
+    const bldMsg=(key==='hx_buildings'||key==='hx_pop_dasy');
     clear(R.mode==='obs'
-      ? 'H3-'+res+' bins OSM points, which load at street level. Zoom in to level 14 or closer.'
+      ? 'H3-'+res+(bldMsg?' uses OSM building footprints':' bins OSM points')+', which load at street level. Zoom in to level 14 or closer.'
       : 'H3-'+res+' would draw too many hexes at this zoom. Zoom in, or choose a larger hex (H3-6).');
     return;
   }
@@ -5301,7 +5453,24 @@ function hexRefresh(){
   const pad=0.04*Math.max(e-w,n-s);
   let cells; try{ cells=h3.polygonToCells([[[w-pad,s-pad],[e+pad,s-pad],[e+pad,n+pad],[w-pad,n+pad],[w-pad,s-pad]]],res,true); }catch(err){ clear('Could not build the hex grid for this view.'); return; }
   let vals;
-  if(R.mode==='obs'){
+  /* dispatch to the right compute function based on layer type */
+  if(key==='hx_buildings'){
+    if(R.mode==='obs'){
+      if(!map.isSourceLoaded('hex-bld')){ hexHint('Loading OSM buildings…',res); }
+      else hexHint('',res);
+      vals=hexObsBuildings(cells,res);
+    } else { hexPrep(); vals=hexModelled(cells,res,key); hexHint('',res); }
+  } else if(key==='hx_pop'){
+    hexPrep(); vals=hexPopUniform(cells,res); hexHint('',res);
+  } else if(key==='hx_pop_dasy'){
+    if(R.mode==='obs'){
+      if(!map.isSourceLoaded('hex-bld')){ hexHint('Loading OSM buildings for dasymetric estimate…',res); }
+      else hexHint('',res);
+      vals=hexDasyObs(cells,res);
+    } else { hexPrep(); vals=hexDasymetric(cells,res); hexHint('',res); }
+  } else if(HEX_SOURCES[key]){
+    vals=HEX_SOURCES[key].compute(cells,res); hexHint('',res);
+  } else if(R.mode==='obs'){
     if(!map.isSourceLoaded('hex-poi')){ hexHint('Loading OSM points…',res); }
     else hexHint('',res);
     vals=hexObserved(cells,res,key);
@@ -5329,25 +5498,50 @@ function hexRefresh(){
 function hexLegend(pos,res,nCells){
   const lo=document.getElementById('legLo'), hi=document.getElementById('legHi'), note=document.getElementById('legNote');
   if(!lo) return;
-  const R=HEX_RES[res], how=R.mode==='obs'?'observed: OSM points in the cell':'modelled from mukim OSM totals';
+  const R=HEX_RES[res], key=HEX.key, g=HEX_GROUPS[key];
+  let how=R.mode==='obs'?'observed: OSM points in the cell':'modelled from mukim OSM totals';
+  let unit='per km²';
+  if(key==='hx_pop'||key==='hx_pop_dasy'){ unit='persons/km²'; how=key==='hx_pop_dasy'?(R.mode==='obs'?'dasymetric: building-weighted from OSM tiles':'dasymetric: building-weighted from mukim data'):'uniform from census'; }
+  else if(key==='hx_buildings'){ unit='buildings/km²'; how=R.mode==='obs'?'counted from OSM building footprints':'modelled from mukim building totals'; }
   lo.textContent=pos&&pos.length?HEX_FMT(pos[0]):'Lower';
   hi.textContent=pos&&pos.length?HEX_FMT(pos[pos.length-1]):'Higher';
-  if(note) note.innerHTML='&nbsp;per km² · H3-'+res+' (~'+(R.km2<1?R.km2.toFixed(2):R.km2.toFixed(1))+' km²) · '+how+(nCells?' · '+nCells.toLocaleString()+' hexes':'');
+  if(note) note.innerHTML='&nbsp;'+unit+' · H3-'+res+' (~'+(R.km2<1?R.km2.toFixed(2):R.km2.toFixed(1))+' km²) · '+how+(nCells?' · '+nCells.toLocaleString()+' hexes':'');
 }
 function hexHint(msg,res){
   const host=document.getElementById('mapHost'); if(!host) return;
   let el=document.getElementById('hexHint');
   if(!msg){ if(el) el.style.display='none'; return; }
   if(!el){ el=document.createElement('div'); el.id='hexHint'; el.className='hexhint'; host.appendChild(el); }
-  const zoomBtn=(res&&HEX_RES[res].mode==='obs'&&map.getZoom()<HEX_OBS_Z)?' <button type="button" id="hexZoom">Zoom to level 14</button>':'';
+  const needsZoom=res&&HEX_RES[res].mode==='obs'&&map.getZoom()<HEX_OBS_Z;
+  const zoomBtn=needsZoom?' <button type="button" id="hexZoom">Zoom to level 14</button>':'';
   el.innerHTML=msg.replace(/&/g,'&amp;').replace(/</g,'&lt;')+zoomBtn; el.style.display='';
   const zb=document.getElementById('hexZoom'); if(zb) zb.onclick=()=>map.easeTo({zoom:HEX_OBS_Z,duration:800});
 }
 function hexClick(e){
   const f=e.features&&e.features[0]; if(!f) return;
-  const id=f.properties.id, v=+f.properties.v, res=HEX.res, R=HEX_RES[res], g=HEX_GROUPS[HEX.key];
-  let how='';
-  if(R.mode==='mod'){
+  const id=f.properties.id, v=+f.properties.v, res=HEX.res, R=HEX_RES[res], g=HEX_GROUPS[HEX.key], key=HEX.key;
+  let how='', unit=g.unit||'per km²', perHex=v*R.km2;
+  if(key==='hx_pop'||key==='hx_pop_dasy'){
+    const w=hexWeights(id,res), G=hexPrep();
+    const top=w.m.map((m,i)=>[G.names[m],w.n[i]]).sort((a,b)=>b[1]-a[1]).slice(0,3)
+      .map(x=>x[0].replace(/^MUKIM /,'').toLowerCase().replace(/(^|\s)\S/g,t=>t.toUpperCase())).join(', ');
+    if(key==='hx_pop_dasy'){
+      how='<div class="hx-s">Dasymetric estimate using OSM building density as weight.'+(R.mode==='obs'?' Building footprints counted from vector tiles.':' Building totals from mukim data.')+'</div>';
+      how+='<div class="hx-s">Mukims: '+top+'</div>';
+    } else {
+      how='<div class="hx-s">Uniform distribution from census population of: '+top+'</div>';
+    }
+    unit='persons/km²';
+  } else if(key==='hx_buildings'){
+    if(R.mode==='obs') how='<div class="hx-s">Building footprints counted from OSM vector tiles.</div>';
+    else {
+      const w=hexWeights(id,res), G=hexPrep();
+      const top=w.m.map((m,i)=>[G.names[m],w.n[i]]).sort((a,b)=>b[1]-a[1]).slice(0,3)
+        .map(x=>x[0].replace(/^MUKIM /,'').toLowerCase().replace(/(^|\s)\S/g,t=>t.toUpperCase())).join(', ');
+      how='<div class="hx-s">Modelled from OSM building totals of: '+top+'</div>';
+    }
+    unit='buildings/km²';
+  } else if(R.mode==='mod'){
     const w=hexWeights(id,res), G=hexPrep();
     const top=w.m.map((m,i)=>[G.names[m],w.n[i]]).sort((a,b)=>b[1]-a[1]).slice(0,3)
       .map(x=>x[0].replace(/^MUKIM /,'').toLowerCase().replace(/(^|\s)\S/g,t=>t.toUpperCase())).join(', ');
@@ -5355,8 +5549,10 @@ function hexClick(e){
   } else {
     how='<div class="hx-s">Counted from OSM points. A cell with none may simply be unmapped.</div>';
   }
-  const html='<div class="hx-t">'+g.label+'</div><div class="hx-v">'+HEX_FMT(v)+' <small>per km²</small></div>'+
-    '<div class="hx-s">≈ '+(v*R.km2<10?(v*R.km2).toFixed(1):Math.round(v*R.km2))+' per hex · H3-'+res+' · '+id+'</div>'+how;
+  const perHexFmt=perHex<10?perHex.toFixed(1):String(Math.round(perHex));
+  const perHexUnit=key==='hx_pop'||key==='hx_pop_dasy'?'persons':'';
+  const html='<div class="hx-t">'+g.label+'</div><div class="hx-v">'+HEX_FMT(v)+' <small>'+unit+'</small></div>'+
+    '<div class="hx-s">≈ '+perHexFmt+(perHexUnit?' '+perHexUnit:'')+' per hex · H3-'+res+' · '+id+'</div>'+how;
   if(HEX.popup) HEX.popup.remove();
   HEX.popup=new maplibregl.Popup({maxWidth:'270px'}).setLngLat(e.lngLat).setHTML(html).addTo(map);
 }
@@ -5477,6 +5673,14 @@ const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice
     });
     h+='</div></details>';
   }
+  /* Population & Building hex layers inside RPI */
+  h+=`<details class="dgroup"><summary><span class="dot" style="background:var(--s5)"></span>Population &amp; Buildings<span class="chev">▶</span></summary><div class="sublist">`;
+  const hexOnly=(key,label,title)=>({label,title,proj:'rpi',
+    src:{hex:{t:'hex',k:key,agg:false},mukim:null,district:null,state:null}});
+  h+=lrowHtml(hexOnly('hx_pop','Population density','Census population distributed uniformly across hex cells'));
+  h+=lrowHtml(hexOnly('hx_pop_dasy','Population (building-weighted)','Dasymetric population estimate: census population weighted by OSM building density for finer spatial detail'));
+  h+=lrowHtml(hexOnly('hx_buildings','Building density (OSM)','OSM building footprint density per hex cell'));
+  h+='</div></details>';
   h+='</div></details>';
   /* --- LST Mapping (dummy project) --- */
   h+=`<details class="hdr lst-det"><summary><span class="dot" style="background:var(--heat)"></span>`+
