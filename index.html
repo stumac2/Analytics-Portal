@@ -826,9 +826,9 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 #sbHide.sb-hide:hover{color:var(--ink);background:var(--line);border-color:var(--ink-3)}
 .sb-show{display:none;position:absolute;top:6px;left:6px;z-index:5;font:inherit;font-family:var(--display);font-size:13px;font-weight:700;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.12)}
 .sb-show:hover{color:var(--ink);border-color:var(--ink-3)}
-.sb-hidden .sidebar-col{display:none!important}
-.sb-hidden .maprow{grid-template-columns:minmax(0,1fr)!important}
-.sb-hidden .sb-show{display:block}
+.maprow.sb-hidden .sidebar-col{display:none!important}
+.maprow.sb-hidden{grid-template-columns:minmax(0,1fr)!important}
+.maprow.sb-hidden .sb-show{display:block}
 .lrow{display:flex;align-items:center;min-width:0}
 .lp .lrow .lbtn{flex:1 1 auto;width:auto;min-width:0}
 .lp .lrow.on .lbtn{background:var(--accent-soft);color:var(--ink);font-weight:600}
