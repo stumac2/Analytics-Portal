@@ -819,6 +819,13 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .map-fs #mlMap{aspect-ratio:unset!important;height:100%!important}
 .map-fs .mapcol-wrap>.card:not(.mapbox),.map-fs .mapcol-wrap>section,.map-fs footer,.map-fs .notes{display:none!important}
 .map-fs .tcband{display:none!important}
+/* --- Sidebar collapse --- */
+.sb-tog{position:absolute;top:8px;left:8px;z-index:5;font:inherit;font-family:var(--display);font-size:11px;font-weight:600;letter-spacing:.03em;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:4px 10px;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.sb-tog:hover{color:var(--ink);border-color:var(--ink-3)}
+.sb-hidden .sidebar-col{display:none!important}
+.sb-hidden .maprow{grid-template-columns:minmax(0,1fr)!important}
+.sb-hidden .sb-tog span::before{content:'☰ Layers'}
+.maprow:not(.sb-hidden) .sb-tog span::before{content:'✕ Layers'}
 .lrow{display:flex;align-items:center;min-width:0}
 .lp .lrow .lbtn{flex:1 1 auto;width:auto;min-width:0}
 .lp .lrow.on .lbtn{background:var(--accent-soft);color:var(--ink);font-weight:600}
@@ -1179,7 +1186,8 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
   <aside class="card lp" id="lpanel" aria-label="Map layer"></aside>
   <aside class="card lp" id="myProj" aria-label="My project"></aside>
   </div>
-  <div class="mapcol-wrap">
+  <div class="mapcol-wrap" style="position:relative">
+  <button type="button" class="sb-tog" id="sbTog" title="Toggle layer panel"><span></span></button>
   <div class="card mapbox">
     <div class="card-h">
       <h2 id="mapTitle">Composite resilience</h2>
@@ -8124,6 +8132,15 @@ document.getElementById('detail').style.display='none';
 const _tblCard=document.getElementById('tbl')?.closest('.card'); if(_tblCard) _tblCard.style.display='none';
 </script>
 <script>
+/* --- Sidebar collapse toggle --- */
+(function(){
+  const btn=document.getElementById('sbTog'); if(!btn) return;
+  const mr=document.querySelector('.maprow'); if(!mr) return;
+  btn.addEventListener('click',()=>{
+    mr.classList.toggle('sb-hidden');
+    setTimeout(()=>{ if(typeof map!=='undefined') map.resize(); },50);
+  });
+})();
 /* --- Fullscreen map toggle --- */
 (function(){
   const btn=document.getElementById('fsBtn'); if(!btn) return;
