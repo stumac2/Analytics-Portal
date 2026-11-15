@@ -956,6 +956,37 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .hotp .hp2-slider-row{display:flex;align-items:center;gap:8px}
 .hotp .hp2-slider-row input[type="range"]{flex:1}
 .hotp .hp2-slider-row span{font-size:11px;color:var(--ink-2);min-width:28px;text-align:right}
+/* Geoguesser */
+.geop[hidden]{display:none!important}
+.geop{position:absolute;inset:0;z-index:8;background:var(--panel);border-radius:8px;padding:18px;overflow:auto;display:flex;flex-direction:column}
+.geop .geo-hdr{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;flex:0 0 auto}
+.geop .geo-hdr h3{font-family:var(--display);font-size:18px;margin:0;color:var(--ink)}
+.geop .geo-hdr button{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;font:inherit}
+.geop .geo-score{font-family:var(--display);font-size:13px;color:var(--ink-2);margin-bottom:12px;flex:0 0 auto;display:flex;gap:16px;align-items:center}
+.geop .geo-score b{color:var(--accent);font-size:15px}
+.geop .geo-body{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:14px;min-height:0}
+.geop .geo-canvas-wrap{flex:0 1 320px;width:100%;max-width:440px;display:flex;align-items:center;justify-content:center;position:relative}
+.geop canvas{display:block;width:100%;height:auto;border:1px solid var(--line-2);border-radius:8px;background:var(--bg)}
+.geop .geo-btns{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;max-width:560px;width:100%;flex:0 0 auto}
+.geop .geo-btns button{flex:0 0 calc(25% - 5px);min-width:110px;padding:8px 4px;border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:8px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.geop .geo-btns button:hover{border-color:var(--accent);background:var(--accent-soft)}
+.geop .geo-btns button.correct{background:#22c55e;border-color:#16a34a;color:#fff;pointer-events:none}
+.geop .geo-btns button.wrong{background:#ef4444;border-color:#dc2626;color:#fff;pointer-events:none}
+.geop .geo-btns button.reveal{border-color:#22c55e;background:rgba(34,197,94,.15);pointer-events:none}
+.geop .geo-btns button:disabled{opacity:.5;cursor:not-allowed}
+.geop .geo-feedback{font-family:var(--display);font-size:14px;min-height:24px;text-align:center;flex:0 0 auto}
+.geop .geo-feedback.right{color:#22c55e}
+.geop .geo-feedback.wrong{color:#ef4444}
+.geop .geo-actions{display:flex;gap:8px;flex:0 0 auto;justify-content:center}
+.geop .geo-actions button{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:6px 14px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.geop .geo-actions button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.geop .geo-summary{text-align:center;font-family:var(--display)}
+.geop .geo-summary .big{font-size:48px;font-weight:800;color:var(--accent);line-height:1.1}
+.geop .geo-summary .sub{font-size:15px;color:var(--ink-2);margin-top:4px}
+.geop .geo-summary .detail{font-size:13px;color:var(--ink-3);margin-top:12px;line-height:1.6}
+.geop .geo-clue{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 10px;font:inherit;font-size:11px;cursor:pointer;align-self:center;flex:0 0 auto}
+.geop .geo-clue:hover{border-color:var(--accent);color:var(--ink)}
+.geop .geo-clue:disabled{opacity:.4;cursor:not-allowed}
 .hexpick{display:none;padding:2px 8px 8px;border-bottom:1px solid var(--line-2);margin-bottom:4px}
 .geo-open .hexpick.open{display:block}
 .hexpick .hp-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:4px 0}
@@ -7479,6 +7510,7 @@ let MCA_ON=false;          /* analysis mode active */
     '<button type="button" class="cam-card" data-ca="buf"><b>Buffer / Proximity</b><span>Drop a pin and draw distance rings (250 m – 5 km). See the population and facilities inside each ring.</span></button>'+
     '<button type="button" class="cam-card" data-ca="gap"><b>Gap Analysis</b><span>Pick a facility type and walking distance. Areas beyond that distance are highlighted as service gaps, with population and coverage statistics.</span></button>'+
     '<button type="button" class="cam-card" data-ca="hot"><b>Hotspot / Cluster</b><span>See where facilities or population concentrate. A heatmap highlights density clusters and ranks the top mukims.</span></button>'+
+    '<button type="button" class="cam-card" data-ca="geo"><b>Geoguesser</b><span>Test your geography! Identify states and federal territories from their boundary shape, then guess which state a district belongs to.</span></button>'+
     '</div>';
   host.appendChild(menu);
 
@@ -7630,6 +7662,7 @@ let MCA_ON=false;          /* analysis mode active */
     if(window.BUF_ON) bufLeave();
     if(window.GAP_ON) gapLeave();
     if(window.HOT_ON) hotLeave();
+    if(window.GEO_ON) geoLeave();
     if(MCA_ON) setMode(false);
     if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
     menu.hidden=false;
@@ -7641,6 +7674,7 @@ let MCA_ON=false;          /* analysis mode active */
     else if(b.dataset.ca==='buf') bufEnter();
     else if(b.dataset.ca==='gap') gapEnter();
     else if(b.dataset.ca==='hot') hotEnter();
+    else if(b.dataset.ca==='geo') geoEnter();
     else { menu.hidden=true; if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='explorer'))); }
   });
   isop.addEventListener('click',e=>{
@@ -8129,7 +8163,165 @@ let MCA_ON=false;          /* analysis mode active */
     hotUpdateRadius();
   });
 
-  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); if(window.HOT_ON) hotLeave(); if(MCA_ON) setMode(false); };
+  /* ── Geoguesser ────────────────────────────────────── */
+  const geop=document.createElement('div'); geop.className='geop'; geop.hidden=true;
+  host.appendChild(geop);
+  const GEO={phase:'state',idx:0,score:0,total:0,order:[],answered:false,distOrder:[],clueUsed:false};
+  const ALL_STATES=STATES.features.map(f=>f.properties.state).sort((a,b)=>a.localeCompare(b));
+
+  function geoEnter(){
+    menu.hidden=true; window.GEO_ON=true;
+    if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
+    if(typeof hexOn==='function'&&hexOn()) hexExit();
+    chrome(true);
+    const t=document.getElementById('mapTitle'); if(t) t.textContent='Geoguesser';
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity='0.4'; lpEl.style.pointerEvents='none'; }
+    geop.hidden=false;
+    geoStartStateRound();
+  }
+  function geoLeave(){
+    if(!window.GEO_ON) return;
+    window.GEO_ON=false; geop.hidden=true;
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity=''; lpEl.style.pointerEvents=''; }
+    chrome(false); _origSwitch2(activeProject||'rpi'); markActiveProject(activeProject||'rpi');
+  }
+
+  function geoShuffle(arr){ const a=[...arr]; for(let i=a.length-1;i>0;i--){const j=Math.random()*i+1|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+  function geoDrawShape(canvas,feature,pad){
+    const ctx=canvas.getContext('2d');
+    const dpr=window.devicePixelRatio||1;
+    const w=canvas.clientWidth||380, h=canvas.clientHeight||320;
+    canvas.width=w*dpr; canvas.height=h*dpr;
+    ctx.scale(dpr,dpr);
+    ctx.clearRect(0,0,w,h);
+    /* compute bounds */
+    const coords=[];
+    const g=feature.geometry;
+    function collect(ring){ ring.forEach(p=>coords.push(p)); }
+    if(g.type==='Polygon') g.coordinates.forEach(collect);
+    else if(g.type==='MultiPolygon') g.coordinates.forEach(poly=>poly.forEach(collect));
+    if(!coords.length) return;
+    let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;
+    coords.forEach(([px,py])=>{ if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py; });
+    const p=pad||30;
+    const sx=(w-2*p)/(x1-x0||1), sy=(h-2*p)/(y1-y0||1), s=Math.min(sx,sy);
+    const cx=(x0+x1)/2, cy=(y0+y1)/2;
+    function tx(lng){ return p+(lng-cx)*s+(w-2*p)/2; }
+    function ty(lat){ return p-(lat-cy)*s+(h-2*p)/2; }
+    /* draw fill + stroke */
+    const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#3b82f6';
+    ctx.fillStyle=accent+'22';
+    ctx.strokeStyle=accent;
+    ctx.lineWidth=2;
+    function drawRing(ring){
+      ctx.beginPath();
+      ring.forEach(([px,py],i)=>{ i===0?ctx.moveTo(tx(px),ty(py)):ctx.lineTo(tx(px),ty(py)); });
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+    if(g.type==='Polygon') g.coordinates.forEach(drawRing);
+    else if(g.type==='MultiPolygon') g.coordinates.forEach(poly=>poly.forEach(drawRing));
+  }
+
+  function geoBuildUI(){
+    const isState=GEO.phase==='state';
+    const isEnd=GEO.phase==='done';
+    let html='<div class="geo-hdr"><h3>Geoguesser'+(isState?' — States':GEO.phase==='district'?' — Districts':'')+'</h3><button type="button" data-geo="back">&larr; Tools</button></div>';
+    html+='<div class="geo-score">Score: <b>'+GEO.score+' / '+GEO.total+'</b>';
+    if(!isEnd) html+=' &nbsp; Round: '+(GEO.idx+1)+' / '+GEO.order.length;
+    html+='</div>';
+    html+='<div class="geo-body">';
+    if(isEnd){
+      const pct=GEO.total?Math.round(GEO.score/GEO.total*100):0;
+      html+='<div class="geo-summary"><div class="big">'+pct+'%</div><div class="sub">'+GEO.score+' out of '+GEO.total+' correct</div>';
+      html+='<div class="detail">States: '+GEO.stateScore+' / 16<br>Districts: '+GEO.distScore+' / 16</div></div>';
+      html+='<div class="geo-actions"><button type="button" data-geo="restart" class="primary">Play again</button><button type="button" data-geo="back">Back to tools</button></div>';
+    } else {
+      html+='<div class="geo-canvas-wrap"><canvas id="geoCanvas" width="380" height="320"></canvas></div>';
+      if(!isState) html+='<button type="button" class="geo-clue" data-geo="clue"'+(GEO.clueUsed?' disabled':'')+'>&#128269; Clue — show district name</button>';
+      html+='<div class="geo-feedback" id="geoFb"></div>';
+      html+='<div class="geo-btns" id="geoBtns">'+ALL_STATES.map(s=>'<button type="button" data-ans="'+s+'">'+s+'</button>').join('')+'</div>';
+      if(GEO.answered) html+='<div class="geo-actions"><button type="button" data-geo="next" class="primary">'+(GEO.idx<GEO.order.length-1?'Next':(isState?'Start districts':'See results'))+'</button></div>';
+    }
+    html+='</div>';
+    geop.innerHTML=html;
+    if(!isEnd){
+      requestAnimationFrame(()=>{
+        const cvs=document.getElementById('geoCanvas');
+        if(cvs) geoDrawShape(cvs,GEO.order[GEO.idx]);
+      });
+    }
+  }
+
+  function geoStartStateRound(){
+    GEO.phase='state'; GEO.idx=0; GEO.score=0; GEO.total=0; GEO.answered=false; GEO.stateScore=0; GEO.distScore=0; GEO.clueUsed=false;
+    GEO.order=geoShuffle(STATES.features.slice());
+    geoBuildUI();
+  }
+  function geoStartDistrictRound(){
+    GEO.phase='district'; GEO.idx=0; GEO.answered=false; GEO.clueUsed=false;
+    GEO.stateScore=GEO.score;
+    const shuffled=geoShuffle(distFC.features.slice());
+    GEO.order=shuffled.slice(0,16);
+    geoBuildUI();
+  }
+
+  geop.addEventListener('click',e=>{
+    const btn=e.target.closest('[data-geo]');
+    const ans=e.target.closest('[data-ans]');
+    if(btn){
+      const k=btn.dataset.geo;
+      if(k==='back'){ geoLeave(); showMenu(); }
+      else if(k==='restart') geoStartStateRound();
+      else if(k==='clue'&&!GEO.clueUsed){
+        GEO.clueUsed=true;
+        btn.disabled=true;
+        const f=GEO.order[GEO.idx];
+        const name=f.properties.name||f.properties.code_state_district||'';
+        const fb=document.getElementById('geoFb');
+        if(fb){ fb.textContent='District: '+name; fb.className='geo-feedback'; }
+      }
+      else if(k==='next'){
+        GEO.idx++; GEO.answered=false; GEO.clueUsed=false;
+        if(GEO.idx>=GEO.order.length){
+          if(GEO.phase==='state') geoStartDistrictRound();
+          else { GEO.phase='done'; GEO.distScore=GEO.score-GEO.stateScore; geoBuildUI(); }
+        } else geoBuildUI();
+      }
+    }
+    if(ans&&!GEO.answered){
+      GEO.answered=true; GEO.total++;
+      const f=GEO.order[GEO.idx];
+      const correct=GEO.phase==='state'?f.properties.state:f.properties.state;
+      const pick=ans.dataset.ans;
+      const fb=document.getElementById('geoFb');
+      if(pick===correct){
+        GEO.score++;
+        ans.classList.add('correct');
+        if(fb){ fb.textContent='✓ Correct!'; fb.className='geo-feedback right'; }
+      } else {
+        ans.classList.add('wrong');
+        /* highlight correct answer */
+        geop.querySelectorAll('[data-ans]').forEach(b=>{ if(b.dataset.ans===correct) b.classList.add('reveal'); });
+        if(fb){
+          const extra=GEO.phase==='district'?(f.properties.name?(' ('+f.properties.name+')'):''):'';
+          fb.textContent='✗ It was '+correct+extra;
+          fb.className='geo-feedback wrong';
+        }
+      }
+      geop.querySelectorAll('[data-ans]').forEach(b=>{ if(!b.classList.contains('correct')&&!b.classList.contains('wrong')&&!b.classList.contains('reveal')) b.disabled=true; });
+      /* add Next button */
+      const isState=GEO.phase==='state';
+      const acts=document.createElement('div'); acts.className='geo-actions';
+      acts.innerHTML='<button type="button" data-geo="next" class="primary">'+(GEO.idx<GEO.order.length-1?'Next':(isState?'Start districts':'See results'))+'</button>';
+      const body=geop.querySelector('.geo-body');
+      if(body) body.appendChild(acts);
+      /* update score display */
+      geop.querySelector('.geo-score b').textContent=GEO.score+' / '+GEO.total;
+    }
+  });
+
+  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); if(window.HOT_ON) hotLeave(); if(window.GEO_ON) geoLeave(); if(MCA_ON) setMode(false); };
   /* exposed for the download menu */
   window.__mcaState=()=>({scores:S.scores,level:S.level,extent:{...S.extent},
     crit:JSON.parse(JSON.stringify(S.crit)),order:S.order.slice(),
