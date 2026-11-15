@@ -824,7 +824,7 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 /* --- Sidebar collapse --- */
 .sb-hide{flex:0 0 auto;display:inline-block;font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-2);background:var(--line-2);border:1px solid var(--line);padding:3px 8px;cursor:pointer;border-radius:4px;line-height:1.2;text-align:center;margin-right:2px;user-select:none}
 .sb-hide:hover{color:var(--ink);background:var(--line);border-color:var(--ink-3)}
-.sb-show{display:none;position:absolute;top:6px;left:6px;z-index:5;font:inherit;font-family:var(--display);font-size:13px;font-weight:700;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+.sb-show{display:none;align-self:flex-start;font:inherit;font-family:var(--display);font-size:12px;font-weight:700;color:var(--ink-2);background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:5px 12px;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.12);margin-bottom:-8px}
 .sb-show:hover{color:var(--ink);border-color:var(--ink-3)}
 .maprow.sb-hidden .sidebar-col{display:none!important}
 .maprow.sb-hidden{grid-template-columns:minmax(0,1fr)!important}
@@ -1190,6 +1190,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
   <aside class="card lp" id="myProj" aria-label="My project"></aside>
   </div>
   <div class="mapcol-wrap">
+  <button type="button" class="sb-show" id="sbShow" title="Show projects panel">☰ Show projects</button>
   <div class="card mapbox">
     <div class="card-h">
       <h2 id="mapTitle">Composite resilience</h2>
@@ -1221,9 +1222,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
       </div>
     </div>
     <div class="card-b" style="padding:10px 12px 14px">
-      <div id="mapHost" style="position:relative">
-        <button type="button" class="sb-show" id="sbShow" title="Show layer panel">☰</button>
-      </div>
+      <div id="mapHost" style="position:relative"></div>
     </div>
     <div class="stats" id="statBox" aria-live="polite"></div>
     <details class="linfo" id="layerInfo"></details>
