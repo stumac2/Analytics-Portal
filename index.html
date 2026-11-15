@@ -801,6 +801,7 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .gchdr span:hover{background:var(--accent-soft);color:var(--ink)}
 .gchdr span.lv-active{background:var(--accent);color:#fff}
 .lv-filtered .lrow.lv-hidden{display:none}
+.lv-filtered .lp-geotog{border-color:var(--accent);color:var(--accent)}
 .lrow{display:flex;align-items:center;min-width:0}
 .lp .lrow .lbtn{flex:1 1 auto;width:auto;min-width:0}
 .lp .lrow.on .lbtn{background:var(--accent-soft);color:var(--ink);font-weight:600}
@@ -5859,7 +5860,7 @@ function setGeoOpen(v){
   if(!maprowEl) return;
   if(maprowEl.classList.contains('geo-open')===v) return;
   maprowEl.classList.toggle('geo-open',v);
-  const t=document.getElementById('lvTog'); if(t){ const fk=typeof lvFilter!=='undefined'&&lvFilter; t.textContent=fk?'Levels ◂ ✕ '+({hex:'HEX',mukim:'MK',district:'DIST',state:'ST'}[fk]):(v?'Levels ◂':'Levels ▸'); }
+  const t=document.getElementById('lvTog'); if(t) t.textContent=v?'Levels ◂':'Levels ▸';
   setTimeout(()=>{try{ if(typeof map!=='undefined'&&map&&map.resize) map.resize(); }catch(_){}},280);
 }
 function curLayerSrc(){
@@ -5933,16 +5934,12 @@ let lvFilter=null; /* null = no filter; 'hex'|'mukim'|'district'|'state' */
 
   /* ---------- Level column filter ---------- */
   const GEO_LV_IX={hex:0,mukim:1,district:2,state:3};
-  const LV_NAMES={hex:'HEX',mukim:'MK',district:'DIST',state:'ST'};
   function applyLvFilter(lv){
     const prev=lvFilter; lvFilter=(prev===lv)?null:lv;
     /* toggle header highlights */
     lp.querySelectorAll('.gchdr [data-lv]').forEach(el=>el.classList.toggle('lv-active',el.dataset.lv===lvFilter));
     /* toggle filtered class on panel */
     lp.classList.toggle('lv-filtered',!!lvFilter);
-    /* update Levels button text */
-    const t=document.getElementById('lvTog');
-    if(t) t.textContent=lvFilter?'Levels ◂ ✕ '+LV_NAMES[lvFilter]:(maprowEl.classList.contains('geo-open')?'Levels ◂':'Levels ▸');
     /* show/hide rows */
     lp.querySelectorAll('.lrow').forEach(el=>{
       if(!lvFilter){ el.classList.remove('lv-hidden'); return; }
