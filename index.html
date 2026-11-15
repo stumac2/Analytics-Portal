@@ -5116,9 +5116,9 @@ const HEX_GROUPS={
   /* --- Population & Building hex layers --- */
   hx_buildings:{label:'Building density (OSM)',ramp:'magenta',mk:[38],obs:['_bld'],unit:'/km²',
     hint:'Counts OSM building footprints. At H3-6/7 uses mukim building totals; at H3-8/9 counts from vector tiles.'},
-  hx_pop:{label:'Population density',ramp:'orange',mk:[33],obs:[],unit:'persons/km²',
+  hx_pop:{label:'Population density (hex)',ramp:'green',mk:[33],obs:[],unit:'persons/km²',
     hint:'Distributes mukim census population uniformly across hex cells.'},
-  hx_pop_dasy:{label:'Population (building-weighted)',ramp:'orange',mk:[33],obs:['_bld'],unit:'persons/km²',
+  hx_pop_dasy:{label:'Population – building-weighted (hex)',ramp:'green',mk:[33],obs:['_bld'],unit:'persons/km²',
     hint:'Dasymetric estimate: distributes mukim population using OSM building density as weight, giving finer spatial detail than uniform distribution.'}};
 const HEX_FOR={osm_health:'hx_health',osm_education:'hx_education',osm_community:'hx_community',
   osm_shops:'hx_shops',osm_shops_new:'hx_shops_new',osm_finance:'hx_finance',osm_transport:'hx_transport',osm_emergency:'hx_emergency',
@@ -5631,6 +5631,13 @@ const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice
       }
       h+=lrowHtml(r);
     });
+    /* Add population hex layers to the Population & growth sub-group */
+    if(cat==='Population & growth'){
+      const hexOnly=(key,label,title)=>({label,title,proj:'demo',
+        src:{hex:{t:'hex',k:key,agg:false},mukim:null,district:null,state:null}});
+      h+=lrowHtml(hexOnly('hx_pop','Population density (hex)','Census population distributed uniformly across hex cells'));
+      h+=lrowHtml(hexOnly('hx_pop_dasy','Population – building-weighted (hex)','Dasymetric population estimate: census population weighted by OSM building density for finer spatial detail'));
+    }
     h+='</div></details>';
   }
   h+='</div></details>';
@@ -5673,14 +5680,6 @@ const srcOf=str=>{if(!str)return null;const i=str.indexOf(':');const t=str.slice
     });
     h+='</div></details>';
   }
-  /* Population & Building hex layers inside RPI */
-  h+=`<details class="dgroup"><summary><span class="dot" style="background:var(--s5)"></span>Population &amp; Buildings<span class="chev">▶</span></summary><div class="sublist">`;
-  const hexOnly=(key,label,title)=>({label,title,proj:'rpi',
-    src:{hex:{t:'hex',k:key,agg:false},mukim:null,district:null,state:null}});
-  h+=lrowHtml(hexOnly('hx_pop','Population density','Census population distributed uniformly across hex cells'));
-  h+=lrowHtml(hexOnly('hx_pop_dasy','Population (building-weighted)','Dasymetric population estimate: census population weighted by OSM building density for finer spatial detail'));
-  h+=lrowHtml(hexOnly('hx_buildings','Building density (OSM)','OSM building footprint density per hex cell'));
-  h+='</div></details>';
   h+='</div></details>';
   /* --- LST Mapping (dummy project) --- */
   h+=`<details class="hdr lst-det"><summary><span class="dot" style="background:var(--heat)"></span>`+
