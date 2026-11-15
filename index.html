@@ -859,6 +859,43 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .isop tr.pop td{font-weight:700;color:var(--ink)}
 .isop tr.sec td{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-top:8px;text-align:left}
 .isop .isop-act{display:flex;gap:6px;padding:10px 0 4px}
+/* Buffer / Gap panels — reuse isop skeleton */
+.bufp[hidden],.gapp[hidden]{display:none!important}
+.bufp,.gapp{position:absolute;top:10px;left:10px;bottom:10px;width:340px;max-width:calc(100% - 20px);z-index:7;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.16);overflow:auto;padding:10px 12px 12px;font-size:12px;color:var(--ink)}
+.bufp .bp-h,.gapp .gp-h{display:flex;align-items:center;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--line-2);margin-bottom:8px}
+.bufp .bp-h b,.gapp .gp-h b{font-family:var(--display);font-size:14px}
+.bufp button,.gapp button{font:inherit;cursor:pointer}
+.bufp .bp-h button,.bufp .bp-b,.bufp .bp-act button,
+.gapp .gp-h button,.gapp .gp-b,.gapp .gp-act button{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 9px;font-size:12px}
+.bufp .bp-b,.gapp .gp-b{width:100%;margin-top:6px}
+.bufp .bp-b:disabled,.gapp .gp-b:disabled{opacity:.45;cursor:not-allowed}
+.bufp .bp-s,.gapp .gp-s{margin-bottom:10px}
+.bufp .bp-l,.gapp .gp-l{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-bottom:4px}
+.bufp .bp-hint,.gapp .gp-hint{font-size:12px;color:var(--ink-2);line-height:1.4}
+.bufp .bp-hint.warn,.gapp .gp-hint.warn{color:var(--warn)}
+.bufp .bp-note,.gapp .gp-note{font-size:10.5px;color:var(--ink-3);line-height:1.4;padding-top:4px}
+.bufp .bp-seg,.gapp .gp-seg{display:flex;gap:4px}
+.bufp .bp-seg button,.bufp .bp-chips button,
+.gapp .gp-seg button,.gapp .gp-chips button{flex:1 1 0;border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:6px 4px;font-weight:600}
+.bufp .bp-chips,.gapp .gp-chips{display:flex;gap:4px;flex-wrap:wrap}
+.bufp .bp-chips button,.gapp .gp-chips button{flex:0 0 auto;min-width:40px}
+.bufp .bp-seg button.on,.bufp .bp-chips button.on,
+.gapp .gp-seg button.on,.gapp .gp-chips button.on{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+.bufp .bp-card,.gapp .gp-card{border-top:1px solid var(--line-2);padding-top:10px}
+.bufp .bp-ct,.gapp .gp-ct{font-family:var(--display);font-size:11px;font-weight:700;color:var(--ink-2);padding-bottom:6px}
+.bufp table,.gapp table{width:100%;border-collapse:collapse;font-size:11.5px}
+.bufp th,.bufp td,.gapp th,.gapp td{padding:4px 4px;text-align:right;border-bottom:1px solid var(--line-2)}
+.bufp th:first-child,.bufp td:first-child,.gapp th:first-child,.gapp td:first-child{text-align:left;color:var(--ink-2)}
+.bufp th,.gapp th{font-family:var(--display);font-size:10.5px;color:var(--ink)}
+.bufp th i,.gapp th i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px}
+.bufp tr.pop td,.gapp tr.pop td{font-weight:700;color:var(--ink)}
+.bufp tr.sec td,.gapp tr.sec td{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding-top:8px;text-align:left}
+.bufp .bp-act,.gapp .gp-act{display:flex;gap:6px;padding:10px 0 4px}
+/* Gap coverage shading */
+.gapp .gp-legend{display:flex;gap:12px;align-items:center;padding:6px 0}
+.gapp .gp-legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:4px;vertical-align:middle}
+.gapp .gp-summary{font-size:13px;line-height:1.5;padding:8px 0}
+.gapp .gp-summary b{color:var(--ink)}
 .hexpick{display:none;padding:2px 8px 8px;border-bottom:1px solid var(--line-2);margin-bottom:4px}
 .geo-open .hexpick.open{display:block}
 .hexpick .hp-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:4px 0}
@@ -3408,7 +3445,7 @@ map.on('load',()=>{
 
   /* Click: mukim layer */
   map.on('click','mukim-fill',e=>{
-    if(window.ISO_ON) return;
+    if(window.ISO_ON||window.BUF_ON||window.GAP_ON) return;
     if(!e.features||!e.features.length) return;
     const nm=e.features[0].properties.n;
     if(mkComparing && selMukim && nm!==selMukim){
@@ -3433,7 +3470,7 @@ map.on('load',()=>{
 
   /* Click: state layer */
   map.on('click','state-fill',e=>{
-    if(window.ISO_ON) return;
+    if(window.ISO_ON||window.BUF_ON||window.GAP_ON) return;
     if(!e.features||!e.features.length) return;
     const st=e.features[0].properties.state;
     stateF=st; sel=st;
@@ -3450,7 +3487,7 @@ map.on('load',()=>{
 
   /* Click: district layer */
   map.on('click','district-fill',e=>{
-    if(window.ISO_ON) return;
+    if(window.ISO_ON||window.BUF_ON||window.GAP_ON) return;
     if(!e.features||!e.features.length) return;
     const code=e.features[0].properties.code_state_district;
     if(!code) return;
@@ -6952,7 +6989,7 @@ let MCA_ON=false;          /* analysis mode active */
     const b=e.target.closest('button[data-mode]'); if(!b) return;
     if(b.dataset.mode==='analysis'){ showMenu(); return; }
     /* Explorer returns the portal to its default blank state */
-    if(window.ISO_ON) isoLeave(); menu.hidden=true;
+    if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); menu.hidden=true;
     modeTogBtns.querySelectorAll('button').forEach(x=>
       x.setAttribute('aria-pressed',String(x.dataset.mode==='explorer')));
     if(typeof resetMap==='function') resetMap(); else setMode(false);
@@ -6995,6 +7032,8 @@ let MCA_ON=false;          /* analysis mode active */
     '<div class="cam-grid">'+
     '<button type="button" class="cam-card" data-ca="mca"><b>Multi Criteria Analysis</b><span>Choose indicators, set weights and rank districts or mukims for a question you define.</span></button>'+
     '<button type="button" class="cam-card" data-ca="iso"><b>Isochrone Mapping</b><span>Drop a pin or use a district centroid, pick a travel mode and time, and see the area reachable with the population and facilities inside it.</span></button>'+
+    '<button type="button" class="cam-card" data-ca="buf"><b>Buffer / Proximity</b><span>Drop a pin and draw distance rings (250 m – 5 km). See the population and facilities inside each ring.</span></button>'+
+    '<button type="button" class="cam-card" data-ca="gap"><b>Gap Analysis</b><span>Pick a facility type and walking distance. Areas beyond that distance are highlighted as service gaps, with population and coverage statistics.</span></button>'+
     '</div>';
   host.appendChild(menu);
 
@@ -7143,6 +7182,8 @@ let MCA_ON=false;          /* analysis mode active */
   }
   function showMenu(){
     if(window.ISO_ON) isoLeave();
+    if(window.BUF_ON) bufLeave();
+    if(window.GAP_ON) gapLeave();
     if(MCA_ON) setMode(false);
     if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
     menu.hidden=false;
@@ -7151,6 +7192,8 @@ let MCA_ON=false;          /* analysis mode active */
     const b=e.target.closest('[data-ca]'); if(!b) return;
     if(b.dataset.ca==='mca'){ menu.hidden=true; setMode(true); }
     else if(b.dataset.ca==='iso') isoEnter();
+    else if(b.dataset.ca==='buf') bufEnter();
+    else if(b.dataset.ca==='gap') gapEnter();
     else { menu.hidden=true; if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='explorer'))); }
   });
   isop.addEventListener('click',e=>{
@@ -7165,7 +7208,325 @@ let MCA_ON=false;          /* analysis mode active */
     else isoDownload(k);
   });
 
-  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(MCA_ON) setMode(false); };
+  /* ---------- Buffer / Proximity Analysis ---------- */
+  window.BUF_ON=false;
+  const BUF={pt:null,radii:new Set([500,1000,2000]),marker:null,layersOk:false,stats:null,fc:null};
+  const BUF_RADII=[250,500,1000,2000,3000,5000];
+  const BUF_COLS=['#b3e0ff','#66c2ff','#3399ff','#0066cc','#004d99','#003366'];
+
+  function bufCircle(center,radiusM,n){
+    n=n||64; const d=radiusM/1000, coords=[];
+    const lat=center[1]*Math.PI/180, lon=center[0]*Math.PI/180;
+    for(let i=0;i<=n;i++){
+      const brng=(i/n)*2*Math.PI;
+      const la=Math.asin(Math.sin(lat)*Math.cos(d/6371)+Math.cos(lat)*Math.sin(d/6371)*Math.cos(brng));
+      const lo=lon+Math.atan2(Math.sin(brng)*Math.sin(d/6371)*Math.cos(lat),Math.cos(d/6371)-Math.sin(lat)*Math.sin(la));
+      coords.push([lo*180/Math.PI,la*180/Math.PI]);
+    }
+    return [coords];
+  }
+  function bufBuild(){
+    if(!BUF.pt) return;
+    const radii=[...BUF.radii].sort((a,b)=>a-b);
+    const features=radii.map((r,i)=>({type:'Feature',geometry:{type:'Polygon',coordinates:bufCircle(BUF.pt,r)},
+      properties:{radius_m:r,c:BUF_COLS[Math.min(i,BUF_COLS.length-1)]}}));
+    const fc={type:'FeatureCollection',features};
+    BUF.fc=fc;
+    /* stats via H3 polyfill */
+    const G=hexPrep(), groups=ISO_GROUPS.map(k=>({k,d:hexDens(k)})), out=[];
+    for(const f of features){
+      const area=geomKm2(f.geometry), res=area<120?9:area<1500?8:area<15000?7:6, ca=HEX_RES[res].km2;
+      let pop=0; const fac=groups.map(()=>0); let land=0;
+      for(const poly of polysOf(f.geometry)){
+        let cells=[]; try{ cells=h3.polygonToCells(poly,res,true); }catch(_){}
+        for(const c of cells){
+          const ll=h3.cellToLatLng(c), m=hexLocate(ll[1],ll[0]); if(m<0) continue;
+          land+=ca;
+          const row=MKRPI[G.names[m]]; if(row&&G.area[m]>0) pop+=ca*(row[33]||0)/G.area[m];
+          groups.forEach((g,i)=>{ fac[i]+=g.d[m]*ca; });
+        }
+      }
+      out.push({radius_m:f.properties.radius_m,area,land,pop,fac,res});
+    }
+    BUF.stats=out;
+    /* render map */
+    bufLayers();
+    fc.features.sort((a,b)=>b.properties.radius_m-a.properties.radius_m);
+    try{ map.getSource('buf-rings').setData(fc); }catch(_){}
+    /* fit bounds */
+    const outer=fc.features[0]; if(outer){
+      let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;
+      outer.geometry.coordinates[0].forEach(c=>{ x0=Math.min(x0,c[0]); x1=Math.max(x1,c[0]); y0=Math.min(y0,c[1]); y1=Math.max(y1,c[1]); });
+      map.fitBounds([[x0,y0],[x1,y1]],{padding:{top:40,bottom:40,right:40,left:380},maxZoom:15,duration:600});
+    }
+    bufRender();
+  }
+  function bufLayers(){
+    if(BUF.layersOk&&map.getSource('buf-rings')) return;
+    map.addSource('buf-rings',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'buf-fill',type:'fill',source:'buf-rings',paint:{'fill-color':['get','c'],'fill-opacity':0.25}});
+    map.addLayer({id:'buf-line',type:'line',source:'buf-rings',paint:{'line-color':['get','c'],'line-width':1.8,'line-dasharray':[4,3]}});
+    BUF.layersOk=true;
+  }
+  function bufRender(){
+    const box=bufp.querySelector('#bufRes'), S=BUF.stats;
+    if(!S||!S.length){ box.innerHTML=''; return; }
+    const head='<tr><th></th>'+S.map((s,i)=>`<th><i style="background:${BUF_COLS[Math.min(i,BUF_COLS.length-1)]}"></i>${s.radius_m>=1000?(s.radius_m/1000)+' km':s.radius_m+' m'}</th>`).join('')+'</tr>';
+    const row=(l,vals,cls)=>`<tr class="${cls||''}"><td>${l}</td>${vals.map(v=>`<td>${v}</td>`).join('')}</tr>`;
+    let t='<table>'+head+row('Area (km²)',S.map(s=>fmt(s.area)))+row('Population (est.)',S.map(s=>Math.round(s.pop).toLocaleString()),'pop');
+    t+='<tr class="sec"><td colspan="'+(S.length+1)+'">Facilities (est.)</td></tr>';
+    ISO_GROUPS.forEach((k,i)=>{ t+=row(HEX_GROUPS[k].label.replace(' facilities',''),S.map(s=>fmt(s.fac[i]))); });
+    t+='</table>';
+    box.innerHTML='<div class="bp-card"><div class="bp-ct">Proximity from pin</div>'+t+
+      '<div class="bp-act"><button type="button" data-buf="geojson">GeoJSON</button><button type="button" data-buf="csv">CSV</button><button type="button" data-buf="clear">Clear pin</button></div>'+
+      '<div class="bp-note">Population and facilities are estimated from mukim census density and OSM facility totals, assumed uniform inside each mukim.</div></div>';
+  }
+  function bufDownload(kind){
+    if(!BUF.fc||!BUF.stats) return;
+    const byR=Object.fromEntries(BUF.stats.map(s=>[s.radius_m,s]));
+    if(kind==='geojson'){
+      const fc={type:'FeatureCollection',features:BUF.fc.features.map(f=>{ const s=byR[f.properties.radius_m];
+        return {type:'Feature',geometry:f.geometry,properties:{radius_m:s.radius_m,area_km2:+s.area.toFixed(3),population_est:Math.round(s.pop),...Object.fromEntries(ISO_GROUPS.map((k,i)=>[k.replace('hx_','fac_'),+s.fac[i].toFixed(2)]))}}; })};
+      isoSave('buffer.geojson',JSON.stringify(fc),'application/geo+json');
+    } else {
+      const hdr=['radius_m','lon','lat','area_km2','population_est',...ISO_GROUPS.map(k=>k.replace('hx_','fac_')+'_est')];
+      const lines=[hdr.join(',')].concat(BUF.stats.map(s=>[s.radius_m,BUF.pt[0].toFixed(5),BUF.pt[1].toFixed(5),s.area.toFixed(3),Math.round(s.pop),...s.fac.map(v=>v.toFixed(2))].join(',')));
+      isoSave('buffer.csv',lines.join('\n'),'text/csv');
+    }
+  }
+  /* DOM */
+  const bufp=document.createElement('div'); bufp.className='bufp'; bufp.hidden=true;
+  bufp.innerHTML='<div class="bp-h"><button type="button" data-buf="back">&larr; Tools</button><b>Buffer / Proximity</b></div>'+
+    '<div class="bp-s"><div class="bp-l">Origin</div><div class="bp-hint" id="bufHint">Click the map to drop a pin. Drag the pin to move it.</div>'+
+    '<button type="button" class="bp-b" data-buf="dist" id="bufDistBtn">Use selected district centroid</button></div>'+
+    '<div class="bp-s"><div class="bp-l">Buffer radii</div><div class="bp-chips" id="bufRadii"></div></div>'+
+    '<div id="bufRes"></div>';
+  host.appendChild(bufp);
+  function bufBuildChips(){
+    bufp.querySelector('#bufRadii').innerHTML=BUF_RADII.map(r=>`<button type="button" data-r="${r}" class="${BUF.radii.has(r)?'on':''}">${r>=1000?(r/1000)+' km':r+' m'}</button>`).join('');
+  }
+  function bufDistrictState(){
+    const b=bufp.querySelector('#bufDistBtn'), code=ds&&ds.value;
+    const row=code&&rows.find(r=>r.code===code);
+    b.textContent=row?('Use '+row.name+' centroid'):'Use selected district centroid';
+    b.disabled=!row;
+  }
+  function bufPlace(pt){
+    BUF.pt=pt;
+    if(!BUF.marker){
+      BUF.marker=new maplibregl.Marker({draggable:true,color:'#0066cc'}).setLngLat(pt).addTo(map);
+      BUF.marker.on('dragend',()=>{ const l=BUF.marker.getLngLat(); BUF.pt=[l.lng,l.lat]; bufBuild(); });
+    } else BUF.marker.setLngLat(pt);
+    bufBuild();
+  }
+  function bufClear(){
+    BUF.pt=null; BUF.fc=null; BUF.stats=null;
+    if(BUF.marker){ BUF.marker.remove(); BUF.marker=null; }
+    try{ map.getSource('buf-rings').setData({type:'FeatureCollection',features:[]}); }catch(_){}
+    bufp.querySelector('#bufRes').innerHTML='';
+  }
+  let bufPoll=null;
+  function bufMapClick(e){ if(window.BUF_ON&&!bufp.hidden) bufPlace([e.lngLat.lng,e.lngLat.lat]); }
+  function bufEnter(){
+    menu.hidden=true; window.BUF_ON=true;
+    if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
+    if(typeof hexOn==='function'&&hexOn()) hexExit();
+    chrome(true);
+    const t=document.getElementById('mapTitle'); if(t) t.textContent='Buffer / Proximity analysis';
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity='0.4'; lpEl.style.pointerEvents='none'; }
+    bufLayers(); bufBuildChips(); bufDistrictState();
+    bufp.hidden=false; map.getCanvas().style.cursor='crosshair';
+    if(!bufPoll){ map.on('click',bufMapClick); bufPoll=setInterval(bufDistrictState,600); }
+  }
+  function bufLeave(){
+    if(!window.BUF_ON) return;
+    window.BUF_ON=false; bufClear(); bufp.hidden=true; map.getCanvas().style.cursor='';
+    if(bufPoll){ map.off('click',bufMapClick); clearInterval(bufPoll); bufPoll=null; }
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity=''; lpEl.style.pointerEvents=''; }
+    chrome(false); _origSwitch2(activeProject||'rpi'); markActiveProject(activeProject||'rpi');
+  }
+  bufp.addEventListener('click',e=>{
+    const r=e.target.closest('#bufRadii button'), a=e.target.closest('[data-buf]');
+    if(r){ const v=+r.dataset.r; BUF.radii.has(v)?BUF.radii.delete(v):BUF.radii.add(v); bufBuildChips(); if(BUF.pt) bufBuild(); return; }
+    if(!a) return;
+    const k=a.dataset.buf;
+    if(k==='back'){ bufLeave(); showMenu(); }
+    else if(k==='dist'){ const c=ds&&ds.value&&distCentroid(ds.value); if(c) bufPlace(c); }
+    else if(k==='clear') bufClear();
+    else bufDownload(k);
+  });
+
+  /* ---------- Gap Analysis ---------- */
+  window.GAP_ON=false;
+  const GAP={facType:'hx_health',dist:1000,layersOk:false,fc:null,stats:null};
+  const GAP_DISTS=[500,1000,1500,2000,3000,5000];
+  const GAP_COL_COVERED='#4ade80', GAP_COL_GAP='#ef4444';
+  const GAP_FAC_TYPES=[
+    {k:'hx_health',label:'Healthcare'},
+    {k:'hx_education',label:'Education'},
+    {k:'hx_community',label:'Community'},
+    {k:'hx_shops',label:'Shops'},
+    {k:'hx_finance',label:'Financial'},
+    {k:'hx_transport',label:'Public transport'},
+    {k:'hx_emergency',label:'Emergency services'}];
+
+  function gapLayers(){
+    if(GAP.layersOk&&map.getSource('gap-cover')) return;
+    map.addSource('gap-cover',{type:'geojson',data:{type:'FeatureCollection',features:[]}});
+    map.addLayer({id:'gap-fill',type:'fill',source:'gap-cover',paint:{'fill-color':['get','c'],'fill-opacity':0.4}});
+    map.addLayer({id:'gap-line',type:'line',source:'gap-cover',paint:{'line-color':['get','c'],'line-width':1}});
+    GAP.layersOk=true;
+  }
+  function gapRun(){
+    /* build coverage circles around every mukim centroid that has facilities of the selected type */
+    const G=hexPrep(), d=hexDens(GAP.facType);
+    const radius=GAP.dist;
+    /* find mukims with non-zero facility density for this type */
+    const facilityMukims=[];
+    for(let i=0;i<G.names.length;i++){
+      if(d[i]>0){
+        /* mukim centroid */
+        const bb=G.bbs[i];
+        const cx=(bb[0]+bb[2])/2, cy=(bb[1]+bb[3])/2;
+        facilityMukims.push({idx:i,name:G.names[i],cx,cy,dens:d[i]});
+      }
+    }
+    if(!facilityMukims.length){
+      gapRenderEmpty('No '+HEX_GROUPS[GAP.facType].label.toLowerCase()+' found in any mukim.');
+      return;
+    }
+    /* for each mukim, determine if it is covered (has facilities itself or is within radius of one that does) */
+    const covered=new Set(), uncovered=[];
+    const deg=radius/(111320*Math.cos(4*Math.PI/180)); /* rough degrees for proximity check at ~4°N */
+    for(let i=0;i<G.names.length;i++){
+      const bb=G.bbs[i];
+      const cx=(bb[0]+bb[2])/2, cy=(bb[1]+bb[3])/2;
+      if(d[i]>0){ covered.add(i); continue; }
+      /* check proximity to any facility mukim */
+      let near=false;
+      for(const fm of facilityMukims){
+        const dx=cx-fm.cx, dy=cy-fm.cy;
+        if(Math.sqrt(dx*dx+dy*dy)<deg){ near=true; break; }
+      }
+      if(near) covered.add(i);
+      else uncovered.push(i);
+    }
+    /* build geojson: gap polygons from mukim geometries */
+    const features=[];
+    for(const i of uncovered){
+      const f=MKMAP.features.find(f=>f.properties.n===G.names[i]);
+      if(f) features.push({type:'Feature',geometry:f.geometry,properties:{c:GAP_COL_GAP,mukim:G.names[i],status:'gap'}});
+    }
+    for(const i of covered){
+      const f=MKMAP.features.find(f=>f.properties.n===G.names[i]);
+      if(f) features.push({type:'Feature',geometry:f.geometry,properties:{c:GAP_COL_COVERED,mukim:G.names[i],status:'covered'}});
+    }
+    const fc={type:'FeatureCollection',features};
+    GAP.fc=fc;
+    /* stats */
+    let covPop=0, gapPop=0, covArea=0, gapArea=0;
+    for(const i of covered){
+      const row=MKRPI[G.names[i]]; if(!row) continue;
+      covPop+=row[33]||0; covArea+=G.area[i];
+    }
+    for(const i of uncovered){
+      const row=MKRPI[G.names[i]]; if(!row) continue;
+      gapPop+=row[33]||0; gapArea+=G.area[i];
+    }
+    const totalPop=covPop+gapPop, totalArea=covArea+gapArea;
+    const covPct=totalPop>0?((covPop/totalPop)*100).toFixed(1):'0';
+    const gapPct=totalPop>0?((gapPop/totalPop)*100).toFixed(1):'0';
+    GAP.stats={covered:covered.size,uncovered:uncovered.length,totalMukims:G.names.length,covPop,gapPop,totalPop,covArea,gapArea,totalArea,covPct,gapPct,
+      facLabel:HEX_GROUPS[GAP.facType].label};
+    /* render map */
+    gapLayers();
+    try{ map.getSource('gap-cover').setData(fc); }catch(_){}
+    gapRender();
+  }
+  function gapRenderEmpty(msg){
+    gapp.querySelector('#gapRes').innerHTML='<div class="gp-hint">'+msg+'</div>';
+    GAP.fc=null; GAP.stats=null;
+    try{ map.getSource('gap-cover').setData({type:'FeatureCollection',features:[]}); }catch(_){}
+  }
+  function gapRender(){
+    const box=gapp.querySelector('#gapRes'), S=GAP.stats;
+    if(!S){ box.innerHTML=''; return; }
+    const distLabel=GAP.dist>=1000?(GAP.dist/1000)+' km':GAP.dist+' m';
+    let h='<div class="gp-card"><div class="gp-ct">'+S.facLabel+' coverage · '+distLabel+'</div>';
+    h+='<div class="gp-legend"><span><i style="background:'+GAP_COL_COVERED+'"></i>Covered</span><span><i style="background:'+GAP_COL_GAP+'"></i>Gap</span></div>';
+    h+='<div class="gp-summary">';
+    h+='<b>'+S.covPct+'%</b> of population ('+Math.round(S.covPop).toLocaleString()+') lives within '+distLabel+' of a '+S.facLabel.toLowerCase()+' facility.<br>';
+    h+='<b>'+S.gapPct+'%</b> ('+Math.round(S.gapPop).toLocaleString()+') in <b>'+S.uncovered+'</b> mukims are in a service gap.';
+    h+='</div>';
+    h+='<table><tr><th></th><th>Covered</th><th>Gap</th></tr>';
+    h+='<tr><td>Mukims</td><td>'+S.covered+'</td><td>'+S.uncovered+'</td></tr>';
+    h+='<tr class="pop"><td>Population</td><td>'+Math.round(S.covPop).toLocaleString()+'</td><td>'+Math.round(S.gapPop).toLocaleString()+'</td></tr>';
+    h+='<tr><td>Area (km²)</td><td>'+fmt(S.covArea)+'</td><td>'+fmt(S.gapArea)+'</td></tr>';
+    h+='</table>';
+    h+='<div class="gp-act"><button type="button" data-gap="geojson">GeoJSON</button><button type="button" data-gap="csv">CSV</button></div>';
+    h+='<div class="gp-note">Coverage is calculated as mukims with non-zero facility density for the selected type, plus adjacent mukims whose centroid is within the specified distance. Population from census data.</div>';
+    h+='</div>';
+    box.innerHTML=h;
+  }
+  function gapDownload(kind){
+    if(!GAP.fc||!GAP.stats) return;
+    if(kind==='geojson'){
+      const fc={type:'FeatureCollection',features:GAP.fc.features.map(f=>({type:'Feature',geometry:f.geometry,
+        properties:{mukim:f.properties.mukim,status:f.properties.status,facility_type:GAP.facType,radius_m:GAP.dist}}))};
+      isoSave('gap_analysis.geojson',JSON.stringify(fc),'application/geo+json');
+    } else {
+      const G=hexPrep();
+      const hdr=['mukim','status','facility_type','radius_m','population','area_km2'];
+      const lines=[hdr.join(',')];
+      for(const f of GAP.fc.features){
+        const mk=f.properties.mukim, idx=G.names.indexOf(mk);
+        const row=MKRPI[mk], pop=row?(row[33]||0):0, area=idx>=0?G.area[idx]:0;
+        lines.push(['"'+mk+'"',f.properties.status,GAP.facType,GAP.dist,Math.round(pop),area.toFixed(2)].join(','));
+      }
+      isoSave('gap_analysis.csv',lines.join('\n'),'text/csv');
+    }
+  }
+  /* DOM */
+  const gapp=document.createElement('div'); gapp.className='gapp'; gapp.hidden=true;
+  gapp.innerHTML='<div class="gp-h"><button type="button" data-gap="back">&larr; Tools</button><b>Gap Analysis</b></div>'+
+    '<div class="gp-s"><div class="gp-l">Facility type</div><div class="gp-seg" id="gapFac" style="flex-wrap:wrap"></div></div>'+
+    '<div class="gp-s"><div class="gp-l">Coverage distance</div><div class="gp-chips" id="gapDist"></div></div>'+
+    '<div id="gapRes"></div>';
+  host.appendChild(gapp);
+  function gapBuildControls(){
+    gapp.querySelector('#gapFac').innerHTML=GAP_FAC_TYPES.map(f=>`<button type="button" data-fac="${f.k}" class="${GAP.facType===f.k?'on':''}">${f.label}</button>`).join('');
+    gapp.querySelector('#gapDist').innerHTML=GAP_DISTS.map(d=>`<button type="button" data-d="${d}" class="${GAP.dist===d?'on':''}">${d>=1000?(d/1000)+' km':d+' m'}</button>`).join('');
+  }
+  function gapEnter(){
+    menu.hidden=true; window.GAP_ON=true;
+    if(modeTogBtns) modeTogBtns.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.mode==='analysis')));
+    if(typeof hexOn==='function'&&hexOn()) hexExit();
+    chrome(true);
+    const t=document.getElementById('mapTitle'); if(t) t.textContent='Gap Analysis';
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity='0.4'; lpEl.style.pointerEvents='none'; }
+    gapLayers(); gapBuildControls();
+    gapp.hidden=false;
+    gapRun();
+  }
+  function gapLeave(){
+    if(!window.GAP_ON) return;
+    window.GAP_ON=false; gapp.hidden=true;
+    GAP.fc=null; GAP.stats=null;
+    try{ map.getSource('gap-cover').setData({type:'FeatureCollection',features:[]}); }catch(_){}
+    const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity=''; lpEl.style.pointerEvents=''; }
+    chrome(false); _origSwitch2(activeProject||'rpi'); markActiveProject(activeProject||'rpi');
+  }
+  gapp.addEventListener('click',e=>{
+    const f=e.target.closest('#gapFac button'), d=e.target.closest('#gapDist button'), a=e.target.closest('[data-gap]');
+    if(f){ GAP.facType=f.dataset.fac; gapBuildControls(); gapRun(); return; }
+    if(d){ GAP.dist=+d.dataset.d; gapBuildControls(); gapRun(); return; }
+    if(!a) return;
+    const k=a.dataset.gap;
+    if(k==='back'){ gapLeave(); showMenu(); }
+    else gapDownload(k);
+  });
+
+  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); if(MCA_ON) setMode(false); };
   /* exposed for the download menu */
   window.__mcaState=()=>({scores:S.scores,level:S.level,extent:{...S.extent},
     crit:JSON.parse(JSON.stringify(S.crit)),order:S.order.slice(),
