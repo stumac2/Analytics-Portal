@@ -8475,20 +8475,6 @@ document.getElementById('statBox').style.display='none';
 document.getElementById('layerInfo').style.display='none';
 document.getElementById('detail').style.display='none';
 const _tblCard=document.getElementById('tbl')?.closest('.card'); if(_tblCard) _tblCard.style.display='none';
-</script>
-<script>
-
-  window.__mcaExit=()=>{ if(window.ISO_ON) isoLeave(); if(window.BUF_ON) bufLeave(); if(window.GAP_ON) gapLeave(); if(window.HOT_ON) hotLeave(); if(MCA_ON) setMode(false); };
-  /* exposed for the download menu */
-  window.__mcaState=()=>({scores:S.scores,level:S.level,extent:{...S.extent},
-    crit:JSON.parse(JSON.stringify(S.crit)),order:S.order.slice(),
-    label:extentLabel(),meta:id=>critMeta(id)});
-})();
-/* start blank - no project active */
-paint();
-document.getElementById('statBox').style.display='none';
-document.getElementById('layerInfo').style.display='none';
-document.getElementById('detail').style.display='none';
 /* --- Sidebar collapse toggle --- */
 (function(){
   const mr=document.querySelector('.maprow'); if(!mr) return;
