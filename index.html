@@ -1115,6 +1115,31 @@ svg.map path.selb{stroke-dasharray:4 2.5}
 .geop .geo-clue{border:1px solid var(--line);background:var(--panel);color:var(--ink-2);border-radius:6px;padding:5px 10px;font:inherit;font-size:11px;cursor:pointer;align-self:center;flex:0 0 auto}
 .geop .geo-clue:hover{border-color:var(--accent);color:var(--ink)}
 .geop .geo-clue:disabled{opacity:.4;cursor:not-allowed}
+.geo-timer{font-family:var(--display);font-size:15px;font-weight:700;color:var(--ink-2);min-height:22px;flex:0 0 auto;display:flex;align-items:center;gap:6px}
+.geo-timer .gt-bar{width:120px;height:6px;border-radius:3px;background:var(--line-2);overflow:hidden}
+.geo-timer .gt-fill{height:100%;border-radius:3px;background:var(--accent);transition:width .25s linear}
+.geo-timer.warn{color:#f59e0b}
+.geo-timer.warn .gt-fill{background:#f59e0b}
+.geo-timer.crit{color:#ef4444}
+.geo-timer.crit .gt-fill{background:#ef4444}
+.geo-sb{margin-top:16px;width:100%;max-width:480px;text-align:left}
+.geo-sb h4{font-family:var(--display);font-size:13px;font-weight:700;margin:0 0 8px;color:var(--ink);text-align:center}
+.geo-sb table{width:100%;border-collapse:collapse;font-size:12.5px}
+.geo-sb th,.geo-sb td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--line-2)}
+.geo-sb th{font-family:var(--display);font-size:10.5px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.03em}
+.geo-sb td{color:var(--ink-2)}
+.geo-sb td.n{text-align:right;font-variant-numeric:tabular-nums}
+.geo-sb .rank{font-weight:700;width:28px}
+.geo-sb .r1{color:#f59e0b}
+.geo-sb .r2{color:#94a3b8}
+.geo-sb .r3{color:#d97706}
+.geo-sb .new-row{background:var(--accent-soft)}
+.geo-name-row{display:flex;align-items:center;gap:8px;justify-content:center;margin-top:14px}
+.geo-name-row input{border:1px solid var(--line);border-radius:6px;padding:7px 12px;font:inherit;font-size:13px;width:160px;text-align:center;background:var(--panel);color:var(--ink)}
+.geo-name-row input:focus{outline:none;border-color:var(--accent)}
+.geo-name-row button{border:1px solid var(--accent);background:var(--accent);color:#fff;border-radius:6px;padding:7px 14px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.geo-name-row button:disabled{opacity:.5;cursor:not-allowed}
+.geo-sb-empty{font-size:12.5px;color:var(--ink-3);text-align:center;padding:12px 0}
 .hexpick{display:none;padding:2px 8px 8px;border-bottom:1px solid var(--line-2);margin-bottom:4px}
 .geo-open .hexpick.open{display:block}
 .hexpick .hp-h{font-family:var(--display);font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:4px 0}
@@ -8304,8 +8329,79 @@ let MCA_ON=false;          /* analysis mode active */
 /* ── Geoguesser ────────────────────────────────────── */
   const geop=document.createElement('div'); geop.className='geop'; geop.hidden=true;
   host.appendChild(geop);
-  const GEO={phase:'state',idx:0,score:0,total:0,order:[],answered:false,distOrder:[],clueUsed:false};
+  const GEO={phase:'state',idx:0,score:0,total:0,order:[],answered:false,distOrder:[],clueUsed:false,countdown:null,countSec:15};
   const ALL_STATES=STATES.features.map(f=>f.properties.state).sort((a,b)=>a.localeCompare(b));
+
+  /* Scoreboard helpers */
+  function geoLoadScores(){ try{ return JSON.parse(localStorage.getItem('geo_scores')||'[]'); }catch(e){ return []; } }
+  function geoSaveScore(name,pct,score,total,ss,ds){
+    try{
+      const s=geoLoadScores();
+      s.push({name:name||'Anonymous',pct:pct,score:score,total:total,states:ss,districts:ds,date:new Date().toISOString().slice(0,10)});
+      s.sort((a,b)=>b.pct-a.pct||b.score-a.score);
+      if(s.length>30) s.length=30;
+      localStorage.setItem('geo_scores',JSON.stringify(s));
+      return s;
+    }catch(e){ return []; }
+  }
+  function geoScoreboardHTML(highlight){
+    const scores=geoLoadScores();
+    if(!scores.length) return '<div class="geo-sb"><h4>Scoreboard</h4><div class="geo-sb-empty">No scores recorded yet</div></div>';
+    let h='<div class="geo-sb"><h4>Scoreboard</h4><table><thead><tr><th>#</th><th>Name</th><th class="n">Score</th><th class="n">%</th><th>Date</th></tr></thead><tbody>';
+    scores.slice(0,10).forEach((s,i)=>{
+      const rc=i===0?'r1':i===1?'r2':i===2?'r3':'';
+      const nr=highlight!==undefined&&i===highlight?' new-row':'';
+      h+='<tr class="'+nr+'"><td class="rank '+rc+'">'+(i+1)+'</td><td>'+s.name+'</td><td class="n">'+s.score+'/'+s.total+'</td><td class="n">'+s.pct+'%</td><td>'+s.date+'</td></tr>';
+    });
+    h+='</tbody></table></div>';
+    return h;
+  }
+
+  /* Countdown timer helpers */
+  function geoStartCountdown(){
+    geoClearCountdown();
+    GEO.countSec=15;
+    geoUpdateTimerUI();
+    GEO.countdown=setInterval(()=>{
+      GEO.countSec--;
+      geoUpdateTimerUI();
+      if(GEO.countSec<=0){ geoClearCountdown(); geoTimeUp(); }
+    },1000);
+  }
+  function geoClearCountdown(){ if(GEO.countdown){ clearInterval(GEO.countdown); GEO.countdown=null; } }
+  function geoUpdateTimerUI(){
+    const el=document.getElementById('geoTimer');
+    if(!el) return;
+    el.className='geo-timer'+(GEO.countSec<=5?' crit':GEO.countSec<=10?' warn':'');
+    el.querySelector('.gt-fill').style.width=(GEO.countSec/15*100)+'%';
+    el.querySelector('.gt-sec').textContent=GEO.countSec+'s';
+  }
+  function geoTimeUp(){
+    if(GEO.answered) return;
+    GEO.answered=true; GEO.total++;
+    const f=GEO.order[GEO.idx];
+    const correct=f.properties.state;
+    const fb=document.getElementById('geoFb');
+    /* highlight correct answer */
+    geop.querySelectorAll('[data-ans]').forEach(b=>{
+      if(b.dataset.ans===correct) b.classList.add('reveal');
+      else b.disabled=true;
+    });
+    if(fb){
+      const extra=GEO.phase==='district'?(f.properties.district?(' ('+f.properties.district+')'):''):'';
+      fb.textContent='⏱ Time\'s up! It was '+correct+extra;
+      fb.className='geo-feedback wrong';
+    }
+    geop.querySelector('.geo-score b').textContent=GEO.score+' / '+GEO.total;
+    if(GEO.timer) clearTimeout(GEO.timer);
+    GEO.timer=setTimeout(()=>{
+      GEO.timer=null; GEO.idx++; GEO.answered=false;
+      if(GEO.idx>=GEO.order.length){
+        if(GEO.phase==='state') geoShowTransition();
+        else { GEO.phase='done'; GEO.distScore=GEO.score-GEO.stateScore; geoBuildUI(); }
+      } else geoBuildUI();
+    },2500);
+  }
 
   function geoEnter(){
     menu.hidden=true; window.GEO_ON=true;
@@ -8319,6 +8415,7 @@ let MCA_ON=false;          /* analysis mode active */
   }
   function geoLeave(){
     if(!window.GEO_ON) return;
+    geoClearCountdown();
     if(GEO.timer){ clearTimeout(GEO.timer); GEO.timer=null; }
     window.GEO_ON=false; geop.hidden=true;
     const lpEl=document.getElementById('lpanel'); if(lpEl){ lpEl.style.opacity=''; lpEl.style.pointerEvents=''; }
@@ -8371,16 +8468,21 @@ let MCA_ON=false;          /* analysis mode active */
     html+='</div>';
     html+='<div class="geo-body">';
     if(isEnd){
+      geoClearCountdown();
       const pct=GEO.total?Math.round(GEO.score/GEO.total*100):0;
       html+='<div class="geo-summary"><div class="big">'+pct+'%</div><div class="sub">'+GEO.score+' out of '+GEO.total+' correct</div>';
       html+='<div class="detail">States: '+GEO.stateScore+' / 16<br>Districts: '+GEO.distScore+' / 16</div></div>';
+      if(!GEO.saved){
+        html+='<div class="geo-name-row"><input type="text" id="geoName" placeholder="Your name" maxlength="20"><button type="button" data-geo="save">Save Score</button></div>';
+      }
       html+='<div class="geo-actions"><button type="button" data-geo="restart" class="primary">Play again</button><button type="button" data-geo="back">Back to tools</button></div>';
+      html+=geoScoreboardHTML(GEO.savedIdx);
     } else {
+      html+='<div id="geoTimer" class="geo-timer"><span class="gt-sec">15s</span><div class="gt-bar"><div class="gt-fill" style="width:100%"></div></div></div>';
       html+='<div class="geo-canvas-wrap"><canvas id="geoCanvas" width="380" height="320"></canvas></div>';
       if(!isState){ const df=GEO.order[GEO.idx]; html+='<div class="geo-feedback" style="color:var(--ink-2);font-size:13px">District: '+(df.properties.district||df.properties.code_state_district||'')+'</div>'; }
       html+='<div class="geo-feedback" id="geoFb"></div>';
       html+='<div class="geo-btns" id="geoBtns">'+ALL_STATES.map(s=>'<button type="button" data-ans="'+s+'">'+s+'</button>').join('')+'</div>';
-      /* no Next button — auto-advances after 3s */
     }
     html+='</div>';
     geop.innerHTML=html;
@@ -8389,15 +8491,17 @@ let MCA_ON=false;          /* analysis mode active */
         const cvs=document.getElementById('geoCanvas');
         if(cvs) geoDrawShape(cvs,GEO.order[GEO.idx]);
       });
+      geoStartCountdown();
     }
   }
 
   function geoStartStateRound(){
-    GEO.phase='state'; GEO.idx=0; GEO.score=0; GEO.total=0; GEO.answered=false; GEO.stateScore=0; GEO.distScore=0; GEO.clueUsed=false;
+    GEO.phase='state'; GEO.idx=0; GEO.score=0; GEO.total=0; GEO.answered=false; GEO.stateScore=0; GEO.distScore=0; GEO.clueUsed=false; GEO.saved=false; GEO.savedIdx=undefined;
     GEO.order=geoShuffle(STATES.features.slice());
     geoBuildUI();
   }
   function geoShowTransition(){
+    geoClearCountdown();
     GEO.stateScore=GEO.score;
     let html='<div class="geo-hdr"><span data-geo="back" role="button" tabindex="0" title="Back to menu">← Back</span><b>Geoguesser</b><span></span></div>';
     html+='<div class="geo-body" style="text-align:center;padding:32px 16px">';
@@ -8426,8 +8530,18 @@ let MCA_ON=false;          /* analysis mode active */
       if(k==='back'){ geoLeave(); showMenu(); }
       else if(k==='restart') geoStartStateRound();
       else if(k==='startdist') geoStartDistrictRound();
+      else if(k==='save'&&!GEO.saved){
+        const inp=document.getElementById('geoName');
+        const name=(inp?inp.value.trim():'')||'Anonymous';
+        const pct=GEO.total?Math.round(GEO.score/GEO.total*100):0;
+        const scores=geoSaveScore(name,pct,GEO.score,GEO.total,GEO.stateScore,GEO.distScore);
+        GEO.saved=true;
+        GEO.savedIdx=scores.findIndex(s=>s.name===name&&s.pct===pct&&s.score===GEO.score&&s.date===new Date().toISOString().slice(0,10));
+        geoBuildUI();
+      }
     }
     if(ans&&!GEO.answered){
+      geoClearCountdown();
       GEO.answered=true; GEO.total++;
       const f=GEO.order[GEO.idx];
       const correct=GEO.phase==='state'?f.properties.state:f.properties.state;
