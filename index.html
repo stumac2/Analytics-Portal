@@ -8681,9 +8681,9 @@ if(map){
     {id:'map', target:'#mapHost', title:'The Map',
      text:'The map shows Malaysia’s administrative boundaries — states, districts and mukims. Zoom in to explore, or click any area to see its name and data.',
      action:'Click any state polygon'},
-    {id:'panel', target:'#lpanel', title:'Project Panel',
+    {id:'panel', target:'.sidebar-col', title:'Project Panel',
      text:'Each project contains layers organised by domain — expand a domain to see its indicators. Use the level selector (State / District / Mukim) to change the geographic scale.',
-     action:'Click a layer or change level'},
+     action:'Click a layer or change level', pos:'below'},
     {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
      text:'For serious map work, go fullscreen. Click the expand button to fill your screen — press Escape or click it again to return.',
      action:'Try the fullscreen button'},
@@ -8724,7 +8724,7 @@ if(map){
   }
 
   /* ── Position spotlight + card ── */
-  function positionCard(targetEl){
+  function positionCard(targetEl, posHint){
     if(!targetEl){
       spotlight.style.display='none';
       card.style.left='50%'; card.style.top='50%';
@@ -8739,20 +8739,26 @@ if(map){
     spotlight.style.width=(r.width+pad*2)+'px';
     spotlight.style.height=(r.height+pad*2)+'px';
 
-    /* try right, then below, then above, then left */
+    /* position card: respect posHint, then try right→below→above→left→centre */
     card.style.transform='none';
     var cw=360, ch=card.offsetHeight||200;
     var vw=window.innerWidth, vh=window.innerHeight;
-    if(r.right+16+cw < vw){
-      card.style.left=(r.right+16+window.scrollX)+'px';
-      card.style.top=(r.top+window.scrollY)+'px';
-    } else if(r.bottom+16+ch < vh){
+    var placed=false;
+    if(posHint==='below' && r.bottom+16+ch < vh){
       card.style.left=(r.left+window.scrollX)+'px';
       card.style.top=(r.bottom+16+window.scrollY)+'px';
-    } else if(r.top-16-ch > 0){
+      placed=true;
+    }
+    if(!placed && posHint!=='below' && r.right+16+cw < vw){
+      card.style.left=(r.right+16+window.scrollX)+'px';
+      card.style.top=(r.top+window.scrollY)+'px';
+    } else if(!placed && r.bottom+16+ch < vh){
+      card.style.left=(r.left+window.scrollX)+'px';
+      card.style.top=(r.bottom+16+window.scrollY)+'px';
+    } else if(!placed && r.top-16-ch > 0){
       card.style.left=(r.left+window.scrollX)+'px';
       card.style.top=(r.top-16-ch+window.scrollY)+'px';
-    } else {
+    } else if(!placed){
       card.style.left='50%'; card.style.top='50%';
       card.style.transform='translate(-50%,-50%)';
     }
@@ -8786,7 +8792,7 @@ if(map){
 
     card.classList.remove('show');
     overlay.classList.add('active');
-    positionCard(targetEl);
+    positionCard(targetEl, step.pos);
     requestAnimationFrame(function(){ card.classList.add('show'); });
     ls(LS_STEP, i);
   }
