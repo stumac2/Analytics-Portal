@@ -8699,7 +8699,7 @@ if(map){
      text:'Switch to Custom Analysis to unlock spatial tools — Isochrone, Buffer, Gap Analysis, Hotspot and Geoguesser. Each runs live against whatever project is loaded. Switch back to Explorer to return to the map.',
      action:'Click “Custom Analysis”', watch:'analysis'},
     {id:'reset', target:'#resetBtn', title:'Reset',
-     text:'Click Reset to clear all selections, return to Explorer mode and restore the default map view. Handy when you want a fresh start.',
+     text:'Click Reset to close Custom Analysis, clear all selections and restore the default map view. This is how you get back to a fresh start.',
      action:'Try the Reset button'}
   ];
 
@@ -8789,13 +8789,7 @@ if(map){
     if(i>=STEPS.length){ finish(); return; }
     var step=STEPS[i];
 
-    /* Close CA mode when entering reset step so map is visible */
-    if(step.id==='reset'){
-      var caMenu=document.querySelector('.camenu');
-      if(caMenu && !caMenu.hidden) caMenu.hidden=true;
-      var expBtn=document.querySelector('#modeTogBtns button[data-mode="explorer"]');
-      if(expBtn) expBtn.click();
-    }
+    /* Reset step: keep CA open so user can press Reset to close it */
 
     var targetEl=qs(step.target);
 
@@ -9033,24 +9027,53 @@ if(map){
     if(spotlightTracker){ clearInterval(spotlightTracker); spotlightTracker=null; }
   }
 
-  /* ── Analysis watcher: highlight tool menu when CA mode opens ── */
+  /* ── Analysis watcher: multi-phase guide through CA tools ── */
   var analysisWatcher=null;
   function startAnalysisWatch(){
     if(analysisWatcher) return;
+    var aPhase=1; /* 1=wait for menu, 2=menu shown, 3=tool opened, 4=back to menu */
     analysisWatcher=setInterval(function(){
       if(current<0){ clearInterval(analysisWatcher); analysisWatcher=null; return; }
       var step=STEPS[current];
       if(!step || step.watch!=='analysis') return;
       var caMenu=document.querySelector('.camenu');
-      if(caMenu && !caMenu.hidden){
-        /* CA menu is open — highlight the tool grid, card to the right */
+      var menuVisible=caMenu && !caMenu.hidden;
+      var toolPanel=document.querySelector('.isop:not([hidden]),.bufp:not([hidden]),.gapp:not([hidden]),.hotp:not([hidden]),.geop:not([hidden]),.mcaov:not([hidden])');
+
+      if(aPhase===1 && menuVisible){
+        /* Phase 2: CA menu open — highlight the tool grid */
+        aPhase=2;
         stopSpotlightTracker();
         var grid=caMenu.querySelector('.cam-grid')||caMenu;
         positionCard(grid, null, true);
         card.querySelector('h3').textContent='Analysis Tools';
-        card.querySelector('p').textContent='Here are your spatial analysis tools. Pick any card to get started. Switch back to Explorer when you\u2019re done.';
+        card.querySelector('p').textContent='Here are your spatial analysis tools. Click any card to explore what it does.';
         var hint=card.querySelector('[style*="font-size:12px"]');
-        if(hint) hint.innerHTML='\ud83d\udc49 Explore the tools, then click Next';
+        if(hint) hint.innerHTML='\ud83d\udc49 Click a tool card';
+      }
+
+      if(aPhase===2 && toolPanel){
+        /* Phase 3: user clicked a tool — highlight the tool panel */
+        aPhase=3;
+        positionCard(toolPanel, null, true);
+        startSpotlightTracker();
+        var toolName=toolPanel.querySelector('b');
+        card.querySelector('h3').textContent=toolName?toolName.textContent:'Tool Panel';
+        card.querySelector('p').textContent='This is the tool\u2019s control panel. When you\u2019re ready, click the \u2190 Tools button to go back.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='\ud83d\udc49 Click \u2190 Tools to go back';
+      }
+
+      if(aPhase===3 && menuVisible && !toolPanel){
+        /* Phase 4: user returned to menu — enable Next, CA stays open for Reset step */
+        aPhase=4;
+        stopSpotlightTracker();
+        var grid=caMenu.querySelector('.cam-grid')||caMenu;
+        positionCard(grid, null, true);
+        card.querySelector('h3').textContent='Custom Analysis';
+        card.querySelector('p').textContent='Great \u2014 you\u2019ve explored the tools! Click Next to learn how to close this and reset the map.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='';
         enableNext();
         clearInterval(analysisWatcher);
         analysisWatcher=null;
