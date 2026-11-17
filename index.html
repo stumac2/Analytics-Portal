@@ -8776,8 +8776,11 @@ if(map){
       card.style.transform='translate(-50%,-50%)';
     }
 
-    /* scroll into view */
-    if(!noScroll) targetEl.scrollIntoView({behavior:'smooth',block:'center'});
+    /* scroll into view, then reposition after scroll settles */
+    if(!noScroll){
+      targetEl.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(function(){ if(activeTarget===targetEl) positionCard(targetEl, posHint, true); }, 600);
+    }
   }
 
   /* ── Render step ── */
