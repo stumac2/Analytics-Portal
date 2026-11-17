@@ -8785,6 +8785,15 @@ if(map){
     current=i;
     if(i>=STEPS.length){ finish(); return; }
     var step=STEPS[i];
+
+    /* Close CA mode when entering reset step so map is visible */
+    if(step.id==='reset'){
+      var caMenu=document.querySelector('.camenu');
+      if(caMenu && !caMenu.hidden) caMenu.hidden=true;
+      var expBtn=document.querySelector('#modeTogBtns button[data-mode="explorer"]');
+      if(expBtn) expBtn.click();
+    }
+
     var targetEl=qs(step.target);
 
     /* dots */
