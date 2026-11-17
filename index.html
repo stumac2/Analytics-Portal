@@ -8975,9 +8975,10 @@ if(map){
       if(!step || step.watch!=='analysis') return;
       var caMenu=document.querySelector('.camenu');
       if(caMenu && !caMenu.hidden){
-        /* CA menu is open — highlight it and reposition card to the right */
+        /* CA menu is open — highlight the tool grid, card to the right */
         stopSpotlightTracker();
-        positionCard(caMenu);
+        var grid=caMenu.querySelector('.cam-grid')||caMenu;
+        positionCard(grid, null, true);
         card.querySelector('h3').textContent='Analysis Tools';
         card.querySelector('p').textContent='Here are your spatial analysis tools. Pick any card to get started. Switch back to Explorer when you\u2019re done.';
         var hint=card.querySelector('[style*="font-size:12px"]');
