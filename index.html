@@ -8683,7 +8683,7 @@ if(map){
     {id:'map', target:'.mapbox', title:'The Map',
      text:'The map shows Malaysia’s administrative boundaries — states, districts and mukims. Zoom in to explore, or click any area to see its name and data.',
      action:'Click any state polygon'},
-    {id:'panel', target:'.sidebar-col', title:'Project Panel',
+    {id:'panel', target:'#lpanel', title:'Project Panel',
      text:'Each project contains layers organised by domain — expand a domain to see its indicators. Use the level selector (State / District / Mukim) to change the geographic scale.',
      action:'Click a layer or change level', pos:'below'},
     {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
@@ -8735,11 +8735,13 @@ if(map){
     }
     var r=targetEl.getBoundingClientRect();
     var pad=8;
+    /* Use scrollHeight if element content overflows its visible box */
+    var h=targetEl.scrollHeight>r.height? targetEl.scrollHeight : r.height;
     spotlight.style.display='block';
     spotlight.style.left=(r.left-pad+window.scrollX)+'px';
     spotlight.style.top=(r.top-pad+window.scrollY)+'px';
     spotlight.style.width=(r.width+pad*2)+'px';
-    spotlight.style.height=(r.height+pad*2)+'px';
+    spotlight.style.height=(h+pad*2)+'px';
 
     /* position card: respect posHint, then try right→below→above→left→centre */
     card.style.transform='none';
