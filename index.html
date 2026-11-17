@@ -8861,16 +8861,15 @@ if(map){
   function startLevelWatch(){
     if(levelWatcher) return;
     /* Record initial level so we detect a change */
-    var btns=document.querySelectorAll('#levelCont button, .levels button, .level-sel button');
+    var btns=document.querySelectorAll('#geoTog button');
     var initialLevel='';
-    btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true'||b.classList.contains('active')) initialLevel=b.textContent.trim(); });
+    btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') initialLevel=b.textContent.trim(); });
     levelWatcher=setInterval(function(){
       if(current<0){ clearInterval(levelWatcher); levelWatcher=null; return; }
       var step=STEPS[current];
       if(!step || step.watch!=='levelchange') return;
       var currentLevel='';
-      btns=document.querySelectorAll('#levelCont button, .levels button, .level-sel button');
-      btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true'||b.classList.contains('active')) currentLevel=b.textContent.trim(); });
+      document.querySelectorAll('#geoTog button').forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') currentLevel=b.textContent.trim(); });
       if(currentLevel && currentLevel!==initialLevel){
         enableNext();
         clearInterval(levelWatcher);
