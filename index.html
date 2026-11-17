@@ -8729,7 +8729,7 @@ if(map){
   }
 
   /* ── Position spotlight + card ── */
-  function positionCard(targetEl, posHint){
+  function positionCard(targetEl, posHint, noScroll){
     activeTarget=targetEl;
     if(!targetEl){
       spotlight.style.display='none';
@@ -8777,7 +8777,7 @@ if(map){
     }
 
     /* scroll into view */
-    targetEl.scrollIntoView({behavior:'smooth',block:'center'});
+    if(!noScroll) targetEl.scrollIntoView({behavior:'smooth',block:'center'});
   }
 
   /* ── Render step ── */
@@ -8908,20 +8908,22 @@ if(map){
       var step=STEPS[current];
       if(!step || step.watch!=='download') return;
       if(!menu.hidden){
-        /* Menu is open — spotlight it */
-        positionCard(menu);
+        /* Menu is open — spotlight it, no scroll to avoid closing menu */
+        stopSpotlightTracker();
+        positionCard(menu, null, true);
         card.querySelector('h3').textContent='Download Formats';
         card.querySelector('p').textContent='Choose from ZIP bundles, XLSX workbooks, CSV, Shapefiles, GeoJSON or PDF. Each Download button on the page offers the formats relevant to that section.';
         var hint=card.querySelector('[style*="font-size:12px"]');
-        if(hint) hint.innerHTML='👉 Pick a format or click Next to continue';
+        if(hint) hint.innerHTML='\ud83d\udc49 Pick a format or click Next to continue';
       } else {
-        /* Menu closed — back to the button */
+        /* Menu closed \u2014 back to the button */
         var dlBtn=qs('#dlMap');
-        if(dlBtn) positionCard(dlBtn);
+        if(dlBtn) positionCard(dlBtn, null, true);
+        startSpotlightTracker();
         card.querySelector('h3').textContent='Downloads';
         card.querySelector('p').textContent='Every chart, map view and data table can be exported. Click any Download button to see the available formats.';
         var hint=card.querySelector('[style*="font-size:12px"]');
-        if(hint) hint.innerHTML='👉 Click the Download button';
+        if(hint) hint.innerHTML='\ud83d\udc49 Click the Download button';
       }
     });
     dlWatcher.observe(menu, {attributes:true, attributeFilter:['hidden']});
