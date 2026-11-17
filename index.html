@@ -8685,8 +8685,8 @@ if(map){
      text:'Each project contains layers organised by domain — expand a domain to see its indicators. Use the level selector (State / District / Mukim) to change the geographic scale.',
      action:'Click a layer or change level', pos:'below'},
     {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
-     text:'For serious map work, go fullscreen. Click the expand button to fill your screen — press Escape or click it again to return.',
-     action:'Try the fullscreen button'},
+     text:'For serious map work, go fullscreen. Click the expand button to fill your screen.',
+     action:'Try the fullscreen button', watch:'fullscreen'},
     {id:'tables', target:'#tbl', title:'Data Tables',
      text:'Select a state on the map and choose a project from the panel — the ranking table below will populate with scores for every district. Click any row to see its full profile and domain breakdown.',
      action:'Select a state and a project to see data'},
@@ -8794,7 +8794,38 @@ if(map){
     overlay.classList.add('active');
     positionCard(targetEl, step.pos);
     requestAnimationFrame(function(){ card.classList.add('show'); });
+    if(step.watch==='fullscreen') startFsWatch();
     ls(LS_STEP, i);
+  }
+
+  /* ── Fullscreen watcher: reposition spotlight onto close button ── */
+  var fsWatcher=null;
+  function startFsWatch(){
+    if(fsWatcher) return;
+    var fsBtn=document.getElementById('fsBtn');
+    if(!fsBtn) return;
+    fsWatcher=new MutationObserver(function(){
+      if(current<0) return;
+      var step=STEPS[current];
+      if(!step || step.watch!=='fullscreen') return;
+      var isFs=document.body.classList.contains('map-fs');
+      if(isFs){
+        /* Reposition spotlight onto the close button */
+        positionCard(fsBtn);
+        card.querySelector('h3').textContent='Exit Fullscreen';
+        card.querySelector('p').textContent='Great! Now click the ✕ button (or press Escape) to exit fullscreen and continue the tour.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='👉 Click ✕ to exit';
+      } else {
+        /* Back to normal — show original text */
+        card.querySelector('h3').textContent='Fullscreen Mode';
+        card.querySelector('p').textContent='For serious map work, go fullscreen. Click the expand button to fill your screen.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='👉 Try the fullscreen button';
+        positionCard(fsBtn);
+      }
+    });
+    fsWatcher.observe(document.body, {attributes:true, attributeFilter:['class']});
   }
 
   function advance(){ showStep(current+1); }
@@ -8803,6 +8834,7 @@ if(map){
     overlay.classList.remove('active');
     card.classList.remove('show');
     spotlight.style.display='none';
+    if(fsWatcher){ fsWatcher.disconnect(); fsWatcher=null; }
     ls(LS_SEEN,'1');
     current=-1;
   }
