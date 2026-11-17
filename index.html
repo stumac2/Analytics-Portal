@@ -8689,6 +8689,9 @@ if(map){
     {id:'tables', target:'#lpanel', title:'Data Tables',
      text:'First, expand a project and select a layer from the panel.',
      action:'Click any layer checkbox', watch:'tables'},
+    {id:'compare', target:'#demoDetail .cmpinline', title:'Compare Areas',
+     text:'Use the dropdown to compare your selected area with another geography.',
+     pos:'below'},
     {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
      text:'For serious map work, go fullscreen. Click the expand button to fill your screen.',
      action:'Try the fullscreen button', watch:'fullscreen'},
@@ -8700,7 +8703,7 @@ if(map){
      action:'Click “Custom Analysis”', watch:'analysis'},
     {id:'reset', target:'#resetBtn', title:'Reset',
      text:'Click Reset to close Custom Analysis, clear all selections and restore the default map view. This is how you get back to a fresh start.',
-     action:'Try the Reset button'}
+     action:'Press the Reset button', watch:'reset'}
   ];
 
   var current=-1, overlay, spotlight, card, welcomeEl, activeTarget=null;
@@ -8825,6 +8828,7 @@ if(map){
     if(step.watch==='tables') startTablesWatch();
     if(step.watch==='download') startDlWatch();
     if(step.watch==='analysis') startAnalysisWatch();
+    if(step.watch==='reset') startResetWatch();
     startSpotlightTracker();
     ls(LS_STEP, i);
   }
@@ -8938,16 +8942,16 @@ if(map){
         var stateSelected=(dd && dd.style.display!=='none') || (ss && ss.value && ss.value!=='All states' && ss.value!=='');
         if(stateSelected){
           phase=3;
-          /* Spotlight the Compare dropdown */
-          var cmpEl=document.querySelector('#demoDetail .cmpinline')||document.getElementById('demoDetail');
-          if(cmpEl){
-            positionCard(cmpEl);
-            cmpEl.scrollIntoView({behavior:'smooth',block:'center'});
+          /* Spotlight the full data tables section */
+          var ddEl=document.getElementById('demoDetail');
+          if(ddEl){
+            positionCard(ddEl);
+            ddEl.scrollIntoView({behavior:'smooth',block:'start'});
           }
           card.querySelector('h3').textContent='Data Tables';
-          card.querySelector('p').textContent='Here are your data tables — showing demographics, scores and rankings for the selected area. Use the dropdown to compare with another geography.';
+          card.querySelector('p').textContent='Here are your data tables \u2014 showing demographics, scores and rankings for the selected area.';
           var hint=card.querySelector('[style*="font-size:12px"]');
-          if(hint) hint.innerHTML='👉 Explore the data, then click Next';
+          if(hint) hint.innerHTML='\ud83d\udc49 Explore the data, then click Next';
           enableNext();
           clearInterval(tablesWatcher);
           tablesWatcher=null;
@@ -9001,6 +9005,7 @@ if(map){
     if(tablesWatcher){ clearInterval(tablesWatcher); tablesWatcher=null; }
     if(dlWatcher){ dlWatcher.disconnect(); dlWatcher=null; }
     if(analysisWatcher){ clearInterval(analysisWatcher); analysisWatcher=null; }
+    if(resetWatcher){ clearInterval(resetWatcher); resetWatcher=null; }
     stopSpotlightTracker();
     ls(LS_SEEN,'1');
     current=-1;
@@ -9053,15 +9058,21 @@ if(map){
       }
 
       if(aPhase===2 && toolPanel){
-        /* Phase 3: user clicked a tool — highlight the tool panel */
+        /* Phase 3: user clicked a tool — highlight the ← Tools back button */
         aPhase=3;
-        positionCard(toolPanel, null, true);
-        startSpotlightTracker();
+        var backBtn=toolPanel.querySelector('[data-iso="back"],[data-buf="back"],[data-gap="back"],[data-hot="back"],[data-geo="back"]');
+        if(backBtn){
+          positionCard(backBtn, null, true);
+          startSpotlightTracker();
+        } else {
+          positionCard(toolPanel, null, true);
+          startSpotlightTracker();
+        }
         var toolName=toolPanel.querySelector('b');
         card.querySelector('h3').textContent=toolName?toolName.textContent:'Tool Panel';
-        card.querySelector('p').textContent='This is the tool\u2019s control panel. When you\u2019re ready, click the \u2190 Tools button to go back.';
+        card.querySelector('p').textContent='This is the tool\u2019s control panel. Click the \u2190 Tools button to go back to the menu.';
         var hint=card.querySelector('[style*="font-size:12px"]');
-        if(hint) hint.innerHTML='\ud83d\udc49 Click \u2190 Tools to go back';
+        if(hint) hint.innerHTML='\ud83d\udc49 Click \u2190 Tools';
       }
 
       if(aPhase===3 && menuVisible && !toolPanel){
@@ -9077,6 +9088,32 @@ if(map){
         enableNext();
         clearInterval(analysisWatcher);
         analysisWatcher=null;
+      }
+    }, 500);
+  }
+
+  /* ── Reset watcher: waits for user to press Reset (CA closes, Explorer active) ── */
+  var resetWatcher=null;
+  function startResetWatch(){
+    if(resetWatcher) return;
+    resetWatcher=setInterval(function(){
+      if(current<0){ clearInterval(resetWatcher); resetWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='reset') return;
+      /* Check: CA menu is hidden (or absent) AND Explorer button is active */
+      var caMenu=document.querySelector('.camenu');
+      var caHidden=!caMenu || caMenu.hidden;
+      var expBtn=document.querySelector('#modeTogBtns button[data-mode="explorer"]');
+      var isExplorer=expBtn && expBtn.getAttribute('aria-pressed')==='true';
+      if(caHidden && isExplorer){
+        enableNext();
+        clearInterval(resetWatcher);
+        resetWatcher=null;
+        /* Confirm reset worked */
+        card.querySelector('h3').textContent='All Reset!';
+        card.querySelector('p').textContent='The map is back to its default state. You\u2019re ready to explore on your own. Click Finish to close the tour.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='';
       }
     }, 500);
   }
