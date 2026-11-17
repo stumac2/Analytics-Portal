@@ -8689,12 +8689,12 @@ if(map){
     {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
      text:'For serious map work, go fullscreen. Click the expand button to fill your screen.',
      action:'Try the fullscreen button', watch:'fullscreen'},
-    {id:'tables', target:'#tbl', title:'Data Tables',
-     text:'Select a state on the map and choose a project from the panel — the ranking table below will populate with scores for every district. Click any row to see its full profile and domain breakdown.',
-     action:'Select a state and a project to see data'},
+    {id:'tables', target:'#lpanel', title:'Data Tables',
+     text:'First, expand a project and select a layer from the panel.',
+     action:'Click any layer checkbox', watch:'tables'},
     {id:'download', target:'#dlMap', title:'Downloads',
-     text:'Any chart, map view or data table can be downloaded. Look for the Download buttons — export as PNG, CSV, or the current map view.',
-     action:'Look for Download buttons'},
+     text:'Every chart, map view and data table can be exported. Click any Download button to see the available formats.',
+     action:'Click the Download button', watch:'download'},
     {id:'analysis', target:'#modeTogBtns', title:'Custom Analysis Tools',
      text:'Switch to Custom Analysis to unlock spatial tools — Isochrone, Buffer, Gap Analysis, Hotspot and Geoguesser. Each runs live against whatever project is loaded.',
      action:'Click “Custom Analysis”'}
@@ -8800,6 +8800,8 @@ if(map){
     positionCard(targetEl, step.pos);
     requestAnimationFrame(function(){ card.classList.add('show'); });
     if(step.watch==='fullscreen') startFsWatch();
+    if(step.watch==='tables') startTablesWatch();
+    if(step.watch==='download') startDlWatch();
     ls(LS_STEP, i);
   }
 
@@ -8833,6 +8835,87 @@ if(map){
     fsWatcher.observe(document.body, {attributes:true, attributeFilter:['class']});
   }
 
+  /* ── Tables watcher: 3-phase guide (layer → state → scroll to data) ── */
+  var tablesWatcher=null;
+  function startTablesWatch(){
+    if(tablesWatcher) return;
+    var phase=1; /* 1=select layer, 2=select state, 3=show tables */
+    tablesWatcher=setInterval(function(){
+      if(current<0){ clearInterval(tablesWatcher); tablesWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='tables') return;
+
+      if(phase===1){
+        /* Check if a layer is active (mapTitle changed from default) */
+        var mt=document.getElementById('mapTitle');
+        if(mt && mt.textContent!=='Composite resilience'){
+          phase=2;
+          /* Move spotlight to map, update text */
+          var mapEl=qs('.mapbox');
+          if(mapEl) positionCard(mapEl);
+          card.querySelector('h3').textContent='Select a State';
+          card.querySelector('p').textContent='Now click any state on the map to see its data populated in the tables below.';
+          var hint=card.querySelector('[style*="font-size:12px"]');
+          if(hint) hint.innerHTML='👉 Click a state polygon';
+        }
+      }
+
+      if(phase===2){
+        /* Check if a state is selected (demoDetail visible or stateSel has value) */
+        var dd=document.getElementById('demoDetail');
+        var ss=document.getElementById('stateSel');
+        var stateSelected=(dd && dd.style.display!=='none') || (ss && ss.value && ss.value!=='All states' && ss.value!=='');
+        if(stateSelected){
+          phase=3;
+          /* Scroll down and spotlight the data area */
+          var dataEl=document.getElementById('demoDetail');
+          if(!dataEl || dataEl.style.display==='none') dataEl=document.getElementById('detail');
+          if(!dataEl || dataEl.style.display==='none') dataEl=document.getElementById('tbl');
+          if(dataEl){
+            positionCard(dataEl);
+            dataEl.scrollIntoView({behavior:'smooth',block:'center'});
+          }
+          card.querySelector('h3').textContent='Data Tables';
+          card.querySelector('p').textContent='Here are your data tables — showing demographics, scores and rankings for the selected area. Click any district row for its full profile.';
+          var hint=card.querySelector('[style*="font-size:12px"]');
+          if(hint) hint.innerHTML='👉 Explore the data, then click Next';
+          clearInterval(tablesWatcher);
+          tablesWatcher=null;
+        }
+      }
+    }, 500);
+  }
+
+  /* ── Download watcher: spotlight the menu when it opens ── */
+  var dlWatcher=null;
+  function startDlWatch(){
+    if(dlWatcher) return;
+    var menu=document.getElementById('dlMenu');
+    if(!menu) return;
+    dlWatcher=new MutationObserver(function(){
+      if(current<0) return;
+      var step=STEPS[current];
+      if(!step || step.watch!=='download') return;
+      if(!menu.hidden){
+        /* Menu is open — spotlight it */
+        positionCard(menu);
+        card.querySelector('h3').textContent='Download Formats';
+        card.querySelector('p').textContent='Choose from ZIP bundles, XLSX workbooks, CSV, Shapefiles, GeoJSON or PDF. Each Download button on the page offers the formats relevant to that section.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='👉 Pick a format or click Next to continue';
+      } else {
+        /* Menu closed — back to the button */
+        var dlBtn=qs('#dlMap');
+        if(dlBtn) positionCard(dlBtn);
+        card.querySelector('h3').textContent='Downloads';
+        card.querySelector('p').textContent='Every chart, map view and data table can be exported. Click any Download button to see the available formats.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='👉 Click the Download button';
+      }
+    });
+    dlWatcher.observe(menu, {attributes:true, attributeFilter:['hidden']});
+  }
+
   function advance(){ showStep(current+1); }
 
   function dismiss(){
@@ -8840,6 +8923,8 @@ if(map){
     card.classList.remove('show');
     spotlight.style.display='none';
     if(fsWatcher){ fsWatcher.disconnect(); fsWatcher=null; }
+    if(tablesWatcher){ clearInterval(tablesWatcher); tablesWatcher=null; }
+    if(dlWatcher){ dlWatcher.disconnect(); dlWatcher=null; }
     ls(LS_SEEN,'1');
     current=-1;
   }
