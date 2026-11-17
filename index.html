@@ -8697,7 +8697,10 @@ if(map){
      action:'Click the Download button', watch:'download'},
     {id:'analysis', target:'#modeTogBtns', title:'Custom Analysis Tools',
      text:'Switch to Custom Analysis to unlock spatial tools — Isochrone, Buffer, Gap Analysis, Hotspot and Geoguesser. Each runs live against whatever project is loaded. Switch back to Explorer to return to the map.',
-     action:'Click “Custom Analysis”'}
+     action:'Click “Custom Analysis”'},
+    {id:'reset', target:'#resetBtn', title:'Reset',
+     text:'Click Reset to clear all selections and return the map to its default view. Handy when you want a fresh start.',
+     action:'Try the Reset button'}
   ];
 
   var current=-1, overlay, spotlight, card, welcomeEl;
