@@ -8682,16 +8682,16 @@ if(map){
   var STEPS=[
     {id:'map', target:'.mapbox', title:'The Map',
      text:'The map shows Malaysia’s administrative boundaries — states, districts and mukims. Zoom in to explore, or click any area to see its name and data.',
-     action:'Click any state polygon', pos:'left'},
+     action:'Click any state polygon', pos:'left', watch:'mapclick'},
     {id:'panel', target:'#lpanel', title:'Project Panel',
-     text:'Each project contains layers organised by domain — expand a domain to see its indicators. Use the level selector (State / District / Mukim) to change the geographic scale.',
-     action:'Click a layer or change level', pos:'below'},
-    {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
-     text:'For serious map work, go fullscreen. Click the expand button to fill your screen.',
-     action:'Try the fullscreen button', watch:'fullscreen'},
+     text:'Each project contains layers organised by domain and sub domain — expand a project, then a domain to see its indicators. Use the level selector (State / District / Mukim) to select the geographic scale for your map.',
+     action:'Change the level selector', pos:'below', watch:'levelchange'},
     {id:'tables', target:'#lpanel', title:'Data Tables',
      text:'First, expand a project and select a layer from the panel.',
      action:'Click any layer checkbox', watch:'tables'},
+    {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
+     text:'For serious map work, go fullscreen. Click the expand button to fill your screen.',
+     action:'Try the fullscreen button', watch:'fullscreen'},
     {id:'download', target:'#dlMap', title:'Downloads',
      text:'Every chart, map view and data table can be exported. Click any Download button to see the available formats.',
      action:'Click the Download button', watch:'download'},
@@ -8742,8 +8742,8 @@ if(map){
     /* Use scrollHeight if element content overflows its visible box */
     var h=targetEl.scrollHeight>r.height? targetEl.scrollHeight : r.height;
     spotlight.style.display='block';
-    spotlight.style.left=(r.left-pad+window.scrollX)+'px';
-    spotlight.style.top=(r.top-pad+window.scrollY)+'px';
+    spotlight.style.left=(r.left-pad)+'px';
+    spotlight.style.top=(r.top-pad)+'px';
     spotlight.style.width=(r.width+pad*2)+'px';
     spotlight.style.height=(h+pad*2)+'px';
 
@@ -8753,24 +8753,24 @@ if(map){
     var vw=window.innerWidth, vh=window.innerHeight;
     var placed=false;
     if(posHint==='left' && r.left-16-cw > 0){
-      card.style.left=(r.left-16-cw+window.scrollX)+'px';
-      card.style.top=(r.top+window.scrollY)+'px';
+      card.style.left=(r.left-16-cw)+'px';
+      card.style.top=(r.top)+'px';
       placed=true;
     }
     if(!placed && posHint==='below' && r.bottom+16+ch < vh){
-      card.style.left=(r.left+window.scrollX)+'px';
-      card.style.top=(r.bottom+16+window.scrollY)+'px';
+      card.style.left=(r.left)+'px';
+      card.style.top=(r.bottom+16)+'px';
       placed=true;
     }
     if(!placed && posHint!=='below' && r.right+16+cw < vw){
-      card.style.left=(r.right+16+window.scrollX)+'px';
-      card.style.top=(r.top+window.scrollY)+'px';
+      card.style.left=(r.right+16)+'px';
+      card.style.top=(r.top)+'px';
     } else if(!placed && r.bottom+16+ch < vh){
-      card.style.left=(r.left+window.scrollX)+'px';
-      card.style.top=(r.bottom+16+window.scrollY)+'px';
+      card.style.left=(r.left)+'px';
+      card.style.top=(r.bottom+16)+'px';
     } else if(!placed && r.top-16-ch > 0){
-      card.style.left=(r.left+window.scrollX)+'px';
-      card.style.top=(r.top-16-ch+window.scrollY)+'px';
+      card.style.left=(r.left)+'px';
+      card.style.top=(r.top-16-ch)+'px';
     } else if(!placed){
       card.style.left='50%'; card.style.top='50%';
       card.style.transform='translate(-50%,-50%)';
@@ -8816,13 +8816,67 @@ if(map){
     card.classList.remove('show');
     overlay.classList.add('active');
     positionCard(targetEl, step.pos);
+    /* Disable Next on steps that require user action first */
+    if(step.watch){
+      var nb=card.querySelector('[data-tour="next"]');
+      if(nb){ nb.disabled=true; nb.style.opacity='0.4'; nb.style.cursor='default'; }
+    }
     requestAnimationFrame(function(){ card.classList.add('show'); });
+    if(step.watch==='mapclick') startMapClickWatch();
+    if(step.watch==='levelchange') startLevelWatch();
     if(step.watch==='fullscreen') startFsWatch();
     if(step.watch==='tables') startTablesWatch();
     if(step.watch==='download') startDlWatch();
     if(step.watch==='analysis') startAnalysisWatch();
     startSpotlightTracker();
     ls(LS_STEP, i);
+  }
+
+  /* ── Enable the Next button (called by watchers when user completes action) ── */
+  function enableNext(){
+    var nb=card.querySelector('[data-tour="next"]');
+    if(nb){ nb.disabled=false; nb.style.opacity='1'; nb.style.cursor='pointer'; }
+  }
+
+  /* ── Map click watcher: detect when user clicks a state polygon ── */
+  var mapClickWatcher=null;
+  function startMapClickWatch(){
+    if(mapClickWatcher) return;
+    mapClickWatcher=setInterval(function(){
+      if(current<0){ clearInterval(mapClickWatcher); mapClickWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='mapclick') return;
+      /* Check if State selector has a value (polygon was clicked) */
+      var ss=document.getElementById('stateSel');
+      if(ss && ss.value && ss.value!=='All states' && ss.value!==''){
+        enableNext();
+        clearInterval(mapClickWatcher);
+        mapClickWatcher=null;
+      }
+    }, 500);
+  }
+
+  /* ── Level change watcher: detect when user changes the level selector ── */
+  var levelWatcher=null;
+  function startLevelWatch(){
+    if(levelWatcher) return;
+    /* Record initial level so we detect a change */
+    var btns=document.querySelectorAll('#levelCont button, .levels button, .level-sel button');
+    var initialLevel='';
+    btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true'||b.classList.contains('active')) initialLevel=b.textContent.trim(); });
+    levelWatcher=setInterval(function(){
+      if(current<0){ clearInterval(levelWatcher); levelWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='levelchange') return;
+      var currentLevel='';
+      btns=document.querySelectorAll('#levelCont button, .levels button, .level-sel button');
+      btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true'||b.classList.contains('active')) currentLevel=b.textContent.trim(); });
+      if(currentLevel && currentLevel!==initialLevel){
+        enableNext();
+        clearInterval(levelWatcher);
+        levelWatcher=null;
+      }
+    }, 500);
   }
 
   /* ── Fullscreen watcher: reposition spotlight onto close button ── */
@@ -8844,11 +8898,12 @@ if(map){
         var hint=card.querySelector('[style*="font-size:12px"]');
         if(hint) hint.innerHTML='👉 Click ✕ to exit';
       } else {
-        /* Back to normal — show original text */
+        /* Back to normal — user tried fullscreen, enable Next */
         card.querySelector('h3').textContent='Fullscreen Mode';
-        card.querySelector('p').textContent='For serious map work, go fullscreen. Click the expand button to fill your screen.';
+        card.querySelector('p').textContent='Great — you’ve seen fullscreen mode! Click Next to continue.';
         var hint=card.querySelector('[style*="font-size:12px"]');
-        if(hint) hint.innerHTML='👉 Try the fullscreen button';
+        if(hint) hint.innerHTML='';
+        enableNext();
         positionCard(fsBtn);
       }
     });
@@ -8899,6 +8954,7 @@ if(map){
           card.querySelector('p').textContent='Here are your data tables — showing demographics, scores and rankings for the selected area. Click any district row for its full profile.';
           var hint=card.querySelector('[style*="font-size:12px"]');
           if(hint) hint.innerHTML='👉 Explore the data, then click Next';
+          enableNext();
           clearInterval(tablesWatcher);
           tablesWatcher=null;
         }
@@ -8924,6 +8980,7 @@ if(map){
         card.querySelector('p').textContent='Choose from ZIP bundles, XLSX workbooks, CSV, Shapefiles, GeoJSON or PDF. Each Download button on the page offers the formats relevant to that section.';
         var hint=card.querySelector('[style*="font-size:12px"]');
         if(hint) hint.innerHTML='\ud83d\udc49 Pick a format or click Next to continue';
+        enableNext();
       } else {
         /* Menu closed \u2014 back to the button */
         var dlBtn=qs('#dlMap');
@@ -8944,6 +9001,8 @@ if(map){
     overlay.classList.remove('active');
     card.classList.remove('show');
     spotlight.style.display='none';
+    if(mapClickWatcher){ clearInterval(mapClickWatcher); mapClickWatcher=null; }
+    if(levelWatcher){ clearInterval(levelWatcher); levelWatcher=null; }
     if(fsWatcher){ fsWatcher.disconnect(); fsWatcher=null; }
     if(tablesWatcher){ clearInterval(tablesWatcher); tablesWatcher=null; }
     if(dlWatcher){ dlWatcher.disconnect(); dlWatcher=null; }
@@ -8964,8 +9023,8 @@ if(map){
       var r=targetEl.getBoundingClientRect();
       var pad=8;
       var h=targetEl.scrollHeight>r.height? targetEl.scrollHeight : r.height;
-      spotlight.style.left=(r.left-pad+window.scrollX)+'px';
-      spotlight.style.top=(r.top-pad+window.scrollY)+'px';
+      spotlight.style.left=(r.left-pad)+'px';
+      spotlight.style.top=(r.top-pad)+'px';
       spotlight.style.width=(r.width+pad*2)+'px';
       spotlight.style.height=(h+pad*2)+'px';
     }, 300);
@@ -8992,6 +9051,7 @@ if(map){
         card.querySelector('p').textContent='Here are your spatial analysis tools. Pick any card to get started. Switch back to Explorer when you\u2019re done.';
         var hint=card.querySelector('[style*="font-size:12px"]');
         if(hint) hint.innerHTML='\ud83d\udc49 Explore the tools, then click Next';
+        enableNext();
         clearInterval(analysisWatcher);
         analysisWatcher=null;
       }
@@ -9020,7 +9080,7 @@ if(map){
     var btn=e.target.closest('[data-tour]');
     if(!btn) return;
     var k=btn.getAttribute('data-tour');
-    if(k==='next') advance();
+    if(k==='next'){ if(btn.disabled) return; advance(); }
     else if(k==='back' && current>0) showStep(current-1);
     else if(k==='skip'||k==='done') dismiss();
     else if(k==='startTour') startTour();
