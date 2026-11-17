@@ -8639,9 +8639,9 @@ if(map){
 <style id="tour-styles">
 /* ── Onboarding Tour ── */
 .tour-overlay{position:fixed;inset:0;z-index:9998;pointer-events:none;transition:opacity .3s}
-.tour-overlay.active{pointer-events:auto}
+.tour-overlay.active{pointer-events:none}
 .tour-spotlight{position:absolute;z-index:9999;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.52);pointer-events:none;transition:all .35s cubic-bezier(.4,0,.2,1)}
-.tour-card{position:absolute;z-index:10000;background:var(--card,#fff);color:var(--ink,#1a1a1a);border:1px solid var(--line,#e0e0e0);border-radius:14px;padding:22px 24px 18px;max-width:360px;min-width:260px;box-shadow:0 12px 40px rgba(0,0,0,.18);font-family:var(--display,system-ui);opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s}
+.tour-card{position:absolute;z-index:10000;pointer-events:auto;background:var(--card,#fff);color:var(--ink,#1a1a1a);border:1px solid var(--line,#e0e0e0);border-radius:14px;padding:22px 24px 18px;max-width:360px;min-width:260px;box-shadow:0 12px 40px rgba(0,0,0,.18);font-family:var(--display,system-ui);opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s}
 .tour-card.show{opacity:1;transform:translateY(0)}
 .tour-card h3{margin:0 0 8px;font-size:16px;font-weight:700;color:var(--ink,#1a1a1a)}
 .tour-card p{margin:0 0 16px;font-size:14px;line-height:1.55;color:var(--ink-2,#555)}
@@ -8708,7 +8708,7 @@ if(map){
   function createUI(){
     overlay=document.createElement('div');
     overlay.className='tour-overlay';
-    overlay.addEventListener('click',function(e){ if(e.target===overlay) dismiss(); });
+    /* clicks pass through overlay to map/panel — dismiss via Skip or ESC */
 
     spotlight=document.createElement('div');
     spotlight.className='tour-spotlight';
