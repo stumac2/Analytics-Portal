@@ -8703,7 +8703,7 @@ if(map){
      action:'Try the Reset button'}
   ];
 
-  var current=-1, overlay, spotlight, card, welcomeEl;
+  var current=-1, overlay, spotlight, card, welcomeEl, activeTarget=null;
 
   /* ── Helpers ── */
   function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){} }
@@ -8730,6 +8730,7 @@ if(map){
 
   /* ── Position spotlight + card ── */
   function positionCard(targetEl, posHint){
+    activeTarget=targetEl;
     if(!targetEl){
       spotlight.style.display='none';
       card.style.left='50%'; card.style.top='50%';
@@ -8947,9 +8948,7 @@ if(map){
     stopSpotlightTracker();
     spotlightTracker=setInterval(function(){
       if(current<0){ stopSpotlightTracker(); return; }
-      var step=STEPS[current];
-      if(!step) return;
-      var targetEl=qs(step.target);
+      var targetEl=activeTarget;
       if(!targetEl) return;
       var r=targetEl.getBoundingClientRect();
       var pad=8;
