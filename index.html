@@ -8682,7 +8682,7 @@ if(map){
   var STEPS=[
     {id:'map', target:'.mapbox', title:'The Map',
      text:'The map shows Malaysia’s administrative boundaries — states, districts and mukims. Zoom in to explore, or click any area to see its name and data.',
-     action:'Click any state polygon'},
+     action:'Click any state polygon', pos:'left'},
     {id:'panel', target:'#lpanel', title:'Project Panel',
      text:'Each project contains layers organised by domain — expand a domain to see its indicators. Use the level selector (State / District / Mukim) to change the geographic scale.',
      action:'Click a layer or change level', pos:'below'},
@@ -8697,9 +8697,9 @@ if(map){
      action:'Click the Download button', watch:'download'},
     {id:'analysis', target:'#modeTogBtns', title:'Custom Analysis Tools',
      text:'Switch to Custom Analysis to unlock spatial tools — Isochrone, Buffer, Gap Analysis, Hotspot and Geoguesser. Each runs live against whatever project is loaded. Switch back to Explorer to return to the map.',
-     action:'Click “Custom Analysis”'},
+     action:'Click “Custom Analysis”', watch:'analysis'},
     {id:'reset', target:'#resetBtn', title:'Reset',
-     text:'Click Reset to clear all selections and return the map to its default view. Handy when you want a fresh start.',
+     text:'Click Reset to clear all selections, return to Explorer mode and restore the default map view. Handy when you want a fresh start.',
      action:'Try the Reset button'}
   ];
 
@@ -8751,7 +8751,12 @@ if(map){
     var cw=360, ch=card.offsetHeight||200;
     var vw=window.innerWidth, vh=window.innerHeight;
     var placed=false;
-    if(posHint==='below' && r.bottom+16+ch < vh){
+    if(posHint==='left' && r.left-16-cw > 0){
+      card.style.left=(r.left-16-cw+window.scrollX)+'px';
+      card.style.top=(r.top+window.scrollY)+'px';
+      placed=true;
+    }
+    if(!placed && posHint==='below' && r.bottom+16+ch < vh){
       card.style.left=(r.left+window.scrollX)+'px';
       card.style.top=(r.bottom+16+window.scrollY)+'px';
       placed=true;
@@ -8805,6 +8810,8 @@ if(map){
     if(step.watch==='fullscreen') startFsWatch();
     if(step.watch==='tables') startTablesWatch();
     if(step.watch==='download') startDlWatch();
+    if(step.watch==='analysis') startAnalysisWatch();
+    startSpotlightTracker();
     ls(LS_STEP, i);
   }
 
@@ -8928,8 +8935,56 @@ if(map){
     if(fsWatcher){ fsWatcher.disconnect(); fsWatcher=null; }
     if(tablesWatcher){ clearInterval(tablesWatcher); tablesWatcher=null; }
     if(dlWatcher){ dlWatcher.disconnect(); dlWatcher=null; }
+    if(analysisWatcher){ clearInterval(analysisWatcher); analysisWatcher=null; }
+    stopSpotlightTracker();
     ls(LS_SEEN,'1');
     current=-1;
+  }
+
+  /* ── Live spotlight tracker: keeps highlight in sync when target resizes ── */
+  var spotlightTracker=null;
+  function startSpotlightTracker(){
+    stopSpotlightTracker();
+    spotlightTracker=setInterval(function(){
+      if(current<0){ stopSpotlightTracker(); return; }
+      var step=STEPS[current];
+      if(!step) return;
+      var targetEl=qs(step.target);
+      if(!targetEl) return;
+      var r=targetEl.getBoundingClientRect();
+      var pad=8;
+      var h=targetEl.scrollHeight>r.height? targetEl.scrollHeight : r.height;
+      spotlight.style.left=(r.left-pad+window.scrollX)+'px';
+      spotlight.style.top=(r.top-pad+window.scrollY)+'px';
+      spotlight.style.width=(r.width+pad*2)+'px';
+      spotlight.style.height=(h+pad*2)+'px';
+    }, 300);
+  }
+  function stopSpotlightTracker(){
+    if(spotlightTracker){ clearInterval(spotlightTracker); spotlightTracker=null; }
+  }
+
+  /* ── Analysis watcher: highlight tool menu when CA mode opens ── */
+  var analysisWatcher=null;
+  function startAnalysisWatch(){
+    if(analysisWatcher) return;
+    analysisWatcher=setInterval(function(){
+      if(current<0){ clearInterval(analysisWatcher); analysisWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='analysis') return;
+      var caMenu=document.querySelector('.camenu');
+      if(caMenu && !caMenu.hidden){
+        /* CA menu is open — highlight it and reposition card to the right */
+        stopSpotlightTracker();
+        positionCard(caMenu);
+        card.querySelector('h3').textContent='Analysis Tools';
+        card.querySelector('p').textContent='Here are your spatial analysis tools. Pick any card to get started. Switch back to Explorer when you\u2019re done.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='\ud83d\udc49 Explore the tools, then click Next';
+        clearInterval(analysisWatcher);
+        analysisWatcher=null;
+      }
+    }, 500);
   }
 
   function finish(){
