@@ -2455,6 +2455,19 @@ const REF_TILES={
 
 const refState={labels:false,hillshade:false,contour:false,buildings:false,districts:true};
 /* Building footprints only exist in the tiles from zoom 13 — tell the user to zoom in */
+const CONTOUR_MINZOOM=9;
+function updateContourHint(){
+  const cb=document.querySelector('input[data-ref="contour"]'); if(!cb) return;
+  const lbl=cb.closest('label'); if(!lbl) return;
+  let h=lbl.querySelector('.ref-hint');
+  if(!h){ h=document.createElement('span'); h.className='ref-hint'; h.style.cssText='margin-left:6px;font-size:11px;color:var(--ink-3)'; lbl.appendChild(h); }
+  const z=(typeof map!=='undefined'&&map&&map.getZoom)?map.getZoom():0;
+  const show=refState.contour&&z<CONTOUR_MINZOOM;
+  h.textContent=show?'zoom in to see':''; h.hidden=!show;
+  h.title=show?'Contours appear from zoom '+CONTOUR_MINZOOM:'';
+}
+try{ map.on('zoomend',updateContourHint); }catch(_){}
+
 const BUILDING_MINZOOM=13;
 function updateBuildingHint(){
   const cb=document.querySelector('input[data-ref="buildings"]'); if(!cb) return;
@@ -2559,6 +2572,7 @@ function toggleRefLayer(key,on){
       if(map.getLayer(cLine)) map.setLayoutProperty(cLine,'visibility','none');
       if(map.getLayer(cLabel)) map.setLayoutProperty(cLabel,'visibility','none');
     }
+    updateContourHint();
     return;
   }
   /* Raster overlays (hillshade) */
