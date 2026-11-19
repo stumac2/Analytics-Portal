@@ -8887,21 +8887,27 @@ if(map){
     }, 500);
   }
 
-  /* ── Level change watcher: detect when user changes the level selector ── */
+  /* ── Level change watcher: detect when user changes the level selector OR ticks a layer checkbox ── */
   var levelWatcher=null;
   function startLevelWatch(){
     if(levelWatcher) return;
-    /* Record initial level so we detect a change */
+    /* Record initial state so we detect a change */
     var btns=document.querySelectorAll('#geoTog button');
     var initialLevel='';
     btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') initialLevel=b.textContent.trim(); });
+    var initialChecked=document.querySelectorAll('#lpanel input[type="checkbox"]:checked').length;
     levelWatcher=setInterval(function(){
       if(current<0){ clearInterval(levelWatcher); levelWatcher=null; return; }
       var step=STEPS[current];
       if(!step || step.watch!=='levelchange') return;
+      /* Check if level changed */
       var currentLevel='';
       document.querySelectorAll('#geoTog button').forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') currentLevel=b.textContent.trim(); });
-      if(currentLevel && currentLevel!==initialLevel){
+      var levelChanged=currentLevel && currentLevel!==initialLevel;
+      /* Check if any new layer checkbox was ticked */
+      var nowChecked=document.querySelectorAll('#lpanel input[type="checkbox"]:checked').length;
+      var layerChanged=nowChecked!==initialChecked;
+      if(levelChanged || layerChanged){
         enableNext();
         clearInterval(levelWatcher);
         levelWatcher=null;
