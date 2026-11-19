@@ -8887,7 +8887,7 @@ if(map){
     }, 500);
   }
 
-  /* ── Level change watcher: advance when user clicks any layer checkbox in the panel ── */
+  /* ── Level change watcher: advance when user clicks any layer indicator cell (.gc.ok) or layer button (.lbtn) ── */
   var levelWatcher=null;
   var _levelClickHandler=null;
   function startLevelWatch(){
@@ -8895,14 +8895,14 @@ if(map){
     var panel=document.getElementById('lpanel');
     if(!panel) return;
     _levelClickHandler=function(e){
-      var cb=e.target.closest('input[type="checkbox"]');
-      if(!cb) return;
+      var gc=e.target.closest('.gc.ok');
+      var lb=e.target.closest('.lbtn');
+      if(!gc && !lb) return;
       enableNext();
       panel.removeEventListener('click',_levelClickHandler,true);
       _levelClickHandler=null;
     };
     panel.addEventListener('click',_levelClickHandler,true);
-    /* Keep a reference so dismiss() can clean up */
     levelWatcher=true;
   }
 
