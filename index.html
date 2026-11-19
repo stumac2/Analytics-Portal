@@ -9211,4 +9211,19 @@ if(map){
   if(tourBtn) tourBtn.addEventListener('click',function(){ showWelcome(); });
 
   /* First visit auto-show (after a 1.5s delay for the map to settle) */
+  if(!ls(LS_SEEN)){
+    setTimeout(showWelcome, 1500);
+  }
+
+  /* Deep link: #tour or #tour=3 */
+  if(location.hash.indexOf('tour')>-1){
+    var m=location.hash.match(/tour=(\d+)/);
+    if(!overlay) createUI();
+    setTimeout(function(){ showStep(m?parseInt(m[1],10):0); },800);
+  }
+
+  /* Public API */
+  window.__portalTour={start:startTour, show:showStep, welcome:showWelcome};
+})();
+</script>
 </body></html>
