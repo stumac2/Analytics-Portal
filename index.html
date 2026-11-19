@@ -8707,7 +8707,7 @@ if(map){
   var STEPS=[
     {id:'map', target:'.mapbox', title:'The Map',
      text:'The map shows Malaysia’s administrative boundaries — states, districts and mukims. Zoom in to explore, or click any area to see its name and data.',
-     action:'Click any state polygon', pos:'left', watch:'mapclick'},
+     action:'Click any state polygon', pos:'bottom-right', watch:'mapclick'},
     {id:'panel', target:'#lpanel', title:'Project Panel',
      text:'Each project contains layers organised by domain and sub domain — expand a project, then a domain to see its indicators. Use the level selector (State / District / Mukim) to select the geographic scale for your map.',
      action:'Select a state (ST) level indicator', pos:'below', watch:'levelchange'},
@@ -8780,7 +8780,12 @@ if(map){
     var cw=360, ch=card.offsetHeight||200;
     var vw=window.innerWidth, vh=window.innerHeight;
     var placed=false;
-    if(posHint==='left' && r.left-16-cw > 0){
+    if(posHint==='bottom-right'){
+      card.style.left=(vw-cw-32)+'px';
+      card.style.top=(vh-ch-32)+'px';
+      placed=true;
+    }
+    if(!placed && posHint==='left' && r.left-16-cw > 0){
       card.style.left=(r.left-16-cw)+'px';
       card.style.top=(r.top)+'px';
       placed=true;
