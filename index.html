@@ -2943,14 +2943,14 @@ map.on('load',()=>{
     id:'mkdist-line',
     type:'line',
     source:'mukim-districts',
-    paint:{'line-color':'rgba(55,62,85,0.42)','line-width':1.1}
+    paint:{'line-color':'rgba(55,62,85,0.30)','line-width':0.8}
   });
   map.addLayer({
     id:'mkdist-gap',
     type:'line',
     source:'districts',
     filter:['!',['in',['get','code_state_district'],['literal',[...MKDIST_HAVE]]]],
-    paint:{'line-color':'rgba(55,62,85,0.42)','line-width':1.1,'line-dasharray':[3,2]}
+    paint:{'line-color':'rgba(55,62,85,0.30)','line-width':0.8,'line-dasharray':[3,2]}
   });
   map.addLayer({
     id:'mukim-selhalo',type:'line',source:'mukims',
@@ -3033,8 +3033,8 @@ function mapReady(){ try{ return !!(map.getLayer && map.getLayer('district-fill'
 function markSelection(){
   if(!mapReady()) return;
   try{
-    const showDist=geoMode==='district'||geoMode==='mukim';
-    /* District selection outline */
+    const showDist=geoMode==='district';
+    /* District selection outline — hidden in mukim mode to avoid visual clutter */
     if(sel && showDist){
       map.setFilter('district-sel',['==','code_state_district',sel]);
       map.setLayoutProperty('district-sel','visibility','visible');
