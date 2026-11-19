@@ -1300,7 +1300,7 @@ footer{margin-top:26px;font-size:12px;color:var(--ink-3)}
     </div>
     <div style="display:flex;align-items:center;gap:12px">
       <div class="stamp"><b>Pilot v1.0</b> &middot; 29 Oct 2026</div>
-      <button type="button" id="resetBtn" class="rstbtn" title="Reset map view">Reset</button>
+      <button type="button" id="resetBtn" class="rstbtn" title="Reset map view">Reset</button><button type="button" id="tourBtn" class="rstbtn" title="Take a tour" style="font-size:15px;padding:4px 8px;line-height:1" aria-label="Start tour">🧭</button>
     </div>
   </div>
 </header>
@@ -8644,4 +8644,555 @@ if(map){
 
 
 </script>
+
+<style id="tour-styles">
+/* ── Onboarding Tour ── */
+.tour-overlay{position:fixed;inset:0;z-index:9998;pointer-events:none;transition:opacity .3s}
+.tour-overlay.active{pointer-events:none}
+.tour-spotlight{position:absolute;z-index:9999;border-radius:8px;box-shadow:0 0 0 9999px rgba(0,0,0,.52);pointer-events:none;transition:all .35s cubic-bezier(.4,0,.2,1)}
+.tour-card{position:absolute;z-index:10000;pointer-events:auto;background:var(--card,#fff);color:var(--ink,#1a1a1a);border:1px solid var(--line,#e0e0e0);border-radius:14px;padding:22px 24px 18px;max-width:360px;min-width:260px;box-shadow:0 12px 40px rgba(0,0,0,.18);font-family:var(--display,system-ui);opacity:0;transform:translateY(10px);transition:opacity .3s,transform .3s}
+.tour-card.show{opacity:1;transform:translateY(0)}
+.tour-card h3{margin:0 0 8px;font-size:16px;font-weight:700;color:var(--ink,#1a1a1a)}
+.tour-card p{margin:0 0 16px;font-size:14px;line-height:1.55;color:var(--ink-2,#555)}
+.tour-dots{display:flex;gap:5px;margin-bottom:14px}
+.tour-dots span{width:7px;height:7px;border-radius:50%;background:var(--line,#ddd);transition:background .2s}
+.tour-dots span.active{background:var(--accent,#2563eb)}
+.tour-dots span.done{background:var(--accent,#2563eb);opacity:.45}
+.tour-actions{display:flex;gap:8px;justify-content:flex-end;align-items:center}
+.tour-actions button{font-family:var(--display,system-ui);font-size:13px;font-weight:600;border-radius:8px;padding:8px 16px;cursor:pointer;border:none;transition:background .15s,color .15s}
+.tour-skip{background:transparent;color:var(--ink-2,#888)}
+.tour-back{background:transparent;color:var(--ink-2,#888)}
+.tour-back:hover{color:var(--ink,#333);background:var(--line-2,#f5f5f5)}
+.tour-skip:hover{color:var(--ink,#333);background:var(--line-2,#f5f5f5)}
+.tour-next{background:var(--accent,#2563eb);color:#fff}
+.tour-next:hover{filter:brightness(1.1)}
+/* Welcome card — centred overlay */
+.tour-welcome{position:fixed;inset:0;z-index:10001;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.45);opacity:0;transition:opacity .35s}
+.tour-welcome.show{opacity:1}
+.tour-welcome-inner{background:var(--card,#fff);color:var(--ink,#1a1a1a);border-radius:18px;padding:36px 32px 28px;max-width:420px;width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);font-family:var(--display,system-ui)}
+.tour-welcome-inner h2{margin:0 0 8px;font-size:20px;font-weight:800}
+.tour-welcome-inner p{margin:0 0 24px;font-size:14px;line-height:1.6;color:var(--ink-2,#555)}
+.tour-welcome-inner .tour-icon{font-size:36px;margin-bottom:12px}
+.tour-btn-skip{display:block;width:100%;padding:14px;font-family:var(--display,system-ui);font-size:15px;font-weight:700;border:2px solid var(--line,#e0e0e0);border-radius:12px;background:var(--card,#fff);color:var(--ink,#1a1a1a);cursor:pointer;margin-bottom:10px;transition:border-color .15s,background .15s}
+.tour-btn-skip:hover{border-color:var(--accent,#2563eb);background:var(--line-2,#f8f8f8)}
+.tour-btn-start{display:block;width:100%;padding:12px;font-family:var(--display,system-ui);font-size:14px;font-weight:600;border:none;border-radius:10px;background:var(--accent,#2563eb);color:#fff;cursor:pointer;transition:filter .15s}
+.tour-btn-start:hover{filter:brightness(1.1)}
+@media(prefers-color-scheme:dark){
+  .tour-spotlight{box-shadow:0 0 0 9999px rgba(0,0,0,.7)}
+  .tour-welcome{background:rgba(0,0,0,.6)}
+}
+<script id="tour-script">
+(function portalTour(){
+  'use strict';
+  var LS_SEEN='portal_tour_seen', LS_STEP='portal_tour_step';
+
+  /* ── Step definitions ── */
+  var STEPS=[
+    {id:'map', target:'.mapbox', title:'The Map',
+     text:'The map shows Malaysia’s administrative boundaries — states, districts and mukims. Zoom in to explore, or click any area to see its name and data.',
+     action:'Click any state polygon', pos:'left', watch:'mapclick'},
+    {id:'panel', target:'#lpanel', title:'Project Panel',
+     text:'Each project contains layers organised by domain and sub domain — expand a project, then a domain to see its indicators. Use the level selector (State / District / Mukim) to select the geographic scale for your map.',
+     action:'Select a state (ST) level indicator', pos:'below', watch:'levelchange'},
+    {id:'tables', target:'#lpanel', title:'Data Tables',
+     text:'First, expand a project and select a layer from the panel.',
+     action:'Click any layer checkbox', watch:'tables'},
+    {id:'compare', target:'#demoDetail .cmpinline', title:'Compare Areas',
+     text:'Use the dropdown to compare your selected area with another geography.',
+     pos:'below'},
+    {id:'fullscreen', target:'#fsBtn', title:'Fullscreen Mode',
+     text:'For serious map work, go fullscreen. Click the expand button to fill your screen.',
+     action:'Try the fullscreen button', watch:'fullscreen'},
+    {id:'download', target:'#dlMap', title:'Downloads',
+     text:'Every chart, map view and data table can be exported. Click any Download button to see the available formats.',
+     action:'Click the Download button', watch:'download'},
+    {id:'analysis', target:'#modeTogBtns', title:'Custom Analysis Tools',
+     text:'Switch to Custom Analysis to unlock spatial tools — Isochrone, Buffer, Gap Analysis, Hotspot and Geoguesser. Each runs live against whatever project is loaded. Switch back to Explorer to return to the map.',
+     action:'Click “Custom Analysis”', watch:'analysis'},
+    {id:'reset', target:'#resetBtn', title:'Reset',
+     text:'Click Reset to close Custom Analysis, clear all selections and restore the default map view. This is how you get back to a fresh start.',
+     action:'Press the Reset button', watch:'reset'}
+  ];
+
+  var current=-1, overlay, spotlight, card, welcomeEl, activeTarget=null;
+
+  /* ── Helpers ── */
+  function ls(k,v){ try{ if(v===undefined) return localStorage.getItem(k); localStorage.setItem(k,v); }catch(e){} }
+  function qs(s){ if(!s) return null; var parts=s.split(','); for(var i=0;i<parts.length;i++){var el=document.querySelector(parts[i].trim()); if(el) return el;} return null; }
+
+  /* ── Build overlay + card ── */
+  function createUI(){
+    overlay=document.createElement('div');
+    overlay.className='tour-overlay';
+    /* clicks pass through overlay to map/panel — dismiss via Skip or ESC */
+
+    spotlight=document.createElement('div');
+    spotlight.className='tour-spotlight';
+
+    card=document.createElement('div');
+    card.className='tour-card';
+    card.setAttribute('role','dialog');
+    card.setAttribute('aria-label','Tour step');
+
+    overlay.appendChild(spotlight);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+  }
+
+  /* ── Position spotlight + card ── */
+  function positionCard(targetEl, posHint, noScroll){
+    activeTarget=targetEl;
+    if(!targetEl){
+      spotlight.style.display='none';
+      card.style.left='50%'; card.style.top='50%';
+      card.style.transform='translate(-50%,-50%)';
+      return;
+    }
+    var r=targetEl.getBoundingClientRect();
+    var pad=8;
+    /* Use scrollHeight if element content overflows its visible box */
+    var h=targetEl.scrollHeight>r.height? targetEl.scrollHeight : r.height;
+    spotlight.style.display='block';
+    spotlight.style.left=(r.left-pad)+'px';
+    spotlight.style.top=(r.top-pad)+'px';
+    spotlight.style.width=(r.width+pad*2)+'px';
+    spotlight.style.height=(h+pad*2)+'px';
+
+    /* position card: respect posHint, then try right→below→above→left→centre */
+    card.style.transform='none';
+    var cw=360, ch=card.offsetHeight||200;
+    var vw=window.innerWidth, vh=window.innerHeight;
+    var placed=false;
+    if(posHint==='left' && r.left-16-cw > 0){
+      card.style.left=(r.left-16-cw)+'px';
+      card.style.top=(r.top)+'px';
+      placed=true;
+    }
+    if(!placed && posHint==='below' && r.bottom+16+ch < vh){
+      card.style.left=(r.left)+'px';
+      card.style.top=(r.bottom+16)+'px';
+      placed=true;
+    }
+    if(!placed && posHint!=='below' && r.right+16+cw < vw){
+      card.style.left=(r.right+16)+'px';
+      card.style.top=(r.top)+'px';
+    } else if(!placed && r.bottom+16+ch < vh){
+      card.style.left=(r.left)+'px';
+      card.style.top=(r.bottom+16)+'px';
+    } else if(!placed && r.top-16-ch > 0){
+      card.style.left=(r.left)+'px';
+      card.style.top=(r.top-16-ch)+'px';
+    } else if(!placed){
+      card.style.left='50%'; card.style.top='50%';
+      card.style.transform='translate(-50%,-50%)';
+    }
+
+    /* scroll into view, then reposition after scroll settles */
+    if(!noScroll){
+      targetEl.scrollIntoView({behavior:'smooth',block:'center'});
+      setTimeout(function(){ if(activeTarget===targetEl) positionCard(targetEl, posHint, true); }, 600);
+    }
+  }
+
+  /* ── Render step ── */
+  function showStep(i){
+    current=i;
+    if(i>=STEPS.length){ finish(); return; }
+    var step=STEPS[i];
+
+    /* Reset step: keep CA open so user can press Reset to close it */
+
+    var targetEl=qs(step.target);
+
+    /* dots */
+    var dots='<div class="tour-dots">';
+    for(var d=0;d<STEPS.length;d++){
+      dots+='<span class="'+(d<i?'done':d===i?'active':'')+'"></span>';
+    }
+    dots+='</div>';
+
+    card.innerHTML=dots+
+      '<h3>'+step.title+'</h3>'+
+      '<p>'+step.text+'</p>'+
+      (step.action?'<p style="font-size:12px;color:var(--ink-3,#999);margin-bottom:12px">👉 '+step.action+'</p>':'')+
+      '<div class="tour-actions">'+
+        '<button type="button" class="tour-skip" data-tour="skip">Skip tour</button>'+
+        (i>0?'<button type="button" class="tour-back" data-tour="back">← Back</button>':'')+
+        '<button type="button" class="tour-next" data-tour="next">'+(i===STEPS.length-1?'Finish':'Next →')+'</button>'+
+      '</div>';
+
+    card.classList.remove('show');
+    overlay.classList.add('active');
+    positionCard(targetEl, step.pos);
+    /* Disable Next on steps that require user action first */
+    if(step.watch){
+      var nb=card.querySelector('[data-tour="next"]');
+      if(nb){ nb.disabled=true; nb.style.opacity='0.4'; nb.style.cursor='default'; }
+    }
+    requestAnimationFrame(function(){ card.classList.add('show'); });
+    if(step.watch==='mapclick') startMapClickWatch();
+    if(step.watch==='levelchange') startLevelWatch();
+    if(step.watch==='fullscreen') startFsWatch();
+    if(step.watch==='tables') startTablesWatch();
+    if(step.watch==='download') startDlWatch();
+    if(step.watch==='analysis') startAnalysisWatch();
+    if(step.watch==='reset') startResetWatch();
+    startSpotlightTracker();
+    ls(LS_STEP, i);
+  }
+
+  /* ── Enable the Next button (called by watchers when user completes action) ── */
+  function enableNext(){
+    var nb=card.querySelector('[data-tour="next"]');
+    if(nb){ nb.disabled=false; nb.style.opacity='1'; nb.style.cursor='pointer'; }
+  }
+
+  /* ── Map click watcher: detect when user clicks a state polygon ── */
+  var mapClickWatcher=null;
+  function startMapClickWatch(){
+    if(mapClickWatcher) return;
+    mapClickWatcher=setInterval(function(){
+      if(current<0){ clearInterval(mapClickWatcher); mapClickWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='mapclick') return;
+      /* Check if State selector has a value (polygon was clicked) */
+      var ss=document.getElementById('stateSel');
+      if(ss && ss.value && ss.value!=='All states' && ss.value!==''){
+        enableNext();
+        clearInterval(mapClickWatcher);
+        mapClickWatcher=null;
+      }
+    }, 500);
+  }
+
+  /* ── Level change watcher: detect when user changes the level selector ── */
+  var levelWatcher=null;
+  function startLevelWatch(){
+    if(levelWatcher) return;
+    /* Record initial level so we detect a change */
+    var btns=document.querySelectorAll('#geoTog button');
+    var initialLevel='';
+    btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') initialLevel=b.textContent.trim(); });
+    levelWatcher=setInterval(function(){
+      if(current<0){ clearInterval(levelWatcher); levelWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='levelchange') return;
+      var currentLevel='';
+      document.querySelectorAll('#geoTog button').forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') currentLevel=b.textContent.trim(); });
+      if(currentLevel && currentLevel!==initialLevel){
+        enableNext();
+        clearInterval(levelWatcher);
+        levelWatcher=null;
+      }
+    }, 500);
+  }
+
+  /* ── Fullscreen watcher: reposition spotlight onto close button ── */
+  var fsWatcher=null;
+  function startFsWatch(){
+    if(fsWatcher) return;
+    var fsBtn=document.getElementById('fsBtn');
+    if(!fsBtn) return;
+    fsWatcher=new MutationObserver(function(){
+      if(current<0) return;
+      var step=STEPS[current];
+      if(!step || step.watch!=='fullscreen') return;
+      var isFs=document.body.classList.contains('map-fs');
+      if(isFs){
+        /* Reposition spotlight onto the close button */
+        positionCard(fsBtn);
+        card.querySelector('h3').textContent='Exit Fullscreen';
+        card.querySelector('p').textContent='Great! Now click the ✕ button (or press Escape) to exit fullscreen and continue the tour.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='👉 Click ✕ to exit';
+      } else {
+        /* Back to normal — user tried fullscreen, enable Next */
+        card.querySelector('h3').textContent='Fullscreen Mode';
+        card.querySelector('p').textContent='Great — you’ve seen fullscreen mode! Click Next to continue.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='';
+        enableNext();
+        positionCard(fsBtn);
+      }
+    });
+    fsWatcher.observe(document.body, {attributes:true, attributeFilter:['class']});
+  }
+
+  /* ── Tables watcher: 3-phase guide (layer → state → scroll to data) ── */
+  var tablesWatcher=null;
+  function startTablesWatch(){
+    if(tablesWatcher) return;
+    var phase=1; /* 1=select layer, 2=select state, 3=show tables */
+    tablesWatcher=setInterval(function(){
+      if(current<0){ clearInterval(tablesWatcher); tablesWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='tables') return;
+
+      if(phase===1){
+        /* Check if a layer is active (mapTitle changed from default) */
+        var mt=document.getElementById('mapTitle');
+        if(mt && mt.textContent!=='Composite resilience'){
+          phase=2;
+          /* Move spotlight to map, update text */
+          var mapEl=qs('.mapbox');
+          if(mapEl) positionCard(mapEl);
+          card.querySelector('h3').textContent='Select a State';
+          card.querySelector('p').textContent='Now click any state on the map to see its data populated in the tables below.';
+          var hint=card.querySelector('[style*="font-size:12px"]');
+          if(hint) hint.innerHTML='👉 Click a state polygon';
+        }
+      }
+
+      if(phase===2){
+        /* Check if a state is selected (demoDetail visible or stateSel has value) */
+        var dd=document.getElementById('demoDetail');
+        var ss=document.getElementById('stateSel');
+        var stateSelected=(dd && dd.style.display!=='none') || (ss && ss.value && ss.value!=='All states' && ss.value!=='');
+        if(stateSelected){
+          phase=3;
+          /* Spotlight the full data tables section */
+          var ddEl=document.getElementById('demoDetail');
+          if(ddEl){
+            positionCard(ddEl);
+            ddEl.scrollIntoView({behavior:'smooth',block:'start'});
+          }
+          card.querySelector('h3').textContent='Data Tables';
+          card.querySelector('p').textContent='Here are your data tables \u2014 showing demographics, scores and rankings for the selected area.';
+          var hint=card.querySelector('[style*="font-size:12px"]');
+          if(hint) hint.innerHTML='\ud83d\udc49 Explore the data, then click Next';
+          enableNext();
+          clearInterval(tablesWatcher);
+          tablesWatcher=null;
+        }
+      }
+    }, 500);
+  }
+
+  /* ── Download watcher: spotlight the menu when it opens ── */
+  var dlWatcher=null;
+  function startDlWatch(){
+    if(dlWatcher) return;
+    var menu=document.getElementById('dlMenu');
+    if(!menu) return;
+    dlWatcher=new MutationObserver(function(){
+      if(current<0) return;
+      var step=STEPS[current];
+      if(!step || step.watch!=='download') return;
+      if(!menu.hidden){
+        /* Menu is open — spotlight it, no scroll to avoid closing menu */
+        stopSpotlightTracker();
+        positionCard(menu, null, true);
+        card.querySelector('h3').textContent='Download Formats';
+        card.querySelector('p').textContent='Choose from ZIP bundles, XLSX workbooks, CSV, Shapefiles, GeoJSON or PDF. Each Download button on the page offers the formats relevant to that section.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='\ud83d\udc49 Pick a format or click Next to continue';
+        enableNext();
+      } else {
+        /* Menu closed \u2014 back to the button */
+        var dlBtn=qs('#dlMap');
+        if(dlBtn) positionCard(dlBtn, null, true);
+        startSpotlightTracker();
+        card.querySelector('h3').textContent='Downloads';
+        card.querySelector('p').textContent='Every chart, map view and data table can be exported. Click any Download button to see the available formats.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='\ud83d\udc49 Click the Download button';
+      }
+    });
+    dlWatcher.observe(menu, {attributes:true, attributeFilter:['hidden']});
+  }
+
+  function advance(){ showStep(current+1); }
+
+  function dismiss(){
+    overlay.classList.remove('active');
+    card.classList.remove('show');
+    spotlight.style.display='none';
+    if(mapClickWatcher){ clearInterval(mapClickWatcher); mapClickWatcher=null; }
+    if(levelWatcher){ clearInterval(levelWatcher); levelWatcher=null; }
+    if(fsWatcher){ fsWatcher.disconnect(); fsWatcher=null; }
+    if(tablesWatcher){ clearInterval(tablesWatcher); tablesWatcher=null; }
+    if(dlWatcher){ dlWatcher.disconnect(); dlWatcher=null; }
+    if(analysisWatcher){ clearInterval(analysisWatcher); analysisWatcher=null; }
+    if(resetWatcher){ clearInterval(resetWatcher); resetWatcher=null; }
+    stopSpotlightTracker();
+    ls(LS_SEEN,'1');
+    current=-1;
+  }
+
+  /* ── Live spotlight tracker: keeps highlight in sync when target resizes ── */
+  var spotlightTracker=null;
+  function startSpotlightTracker(){
+    stopSpotlightTracker();
+    spotlightTracker=setInterval(function(){
+      if(current<0){ stopSpotlightTracker(); return; }
+      var targetEl=activeTarget;
+      if(!targetEl) return;
+      var r=targetEl.getBoundingClientRect();
+      var pad=8;
+      var h=targetEl.scrollHeight>r.height? targetEl.scrollHeight : r.height;
+      spotlight.style.left=(r.left-pad)+'px';
+      spotlight.style.top=(r.top-pad)+'px';
+      spotlight.style.width=(r.width+pad*2)+'px';
+      spotlight.style.height=(h+pad*2)+'px';
+    }, 300);
+  }
+  function stopSpotlightTracker(){
+    if(spotlightTracker){ clearInterval(spotlightTracker); spotlightTracker=null; }
+  }
+
+  /* ── Analysis watcher: multi-phase guide through CA tools ── */
+  var analysisWatcher=null;
+  function startAnalysisWatch(){
+    if(analysisWatcher) return;
+    var aPhase=1; /* 1=wait for menu, 2=menu shown, 3=tool opened, 4=back to menu */
+    analysisWatcher=setInterval(function(){
+      if(current<0){ clearInterval(analysisWatcher); analysisWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='analysis') return;
+      var caMenu=document.querySelector('.camenu');
+      var menuVisible=caMenu && !caMenu.hidden;
+      var toolPanel=document.querySelector('.isop:not([hidden]),.bufp:not([hidden]),.gapp:not([hidden]),.hotp:not([hidden]),.geop:not([hidden]),.mcaov:not([hidden])');
+
+      if(aPhase===1 && menuVisible){
+        /* Phase 2: CA menu open — highlight the tool grid */
+        aPhase=2;
+        stopSpotlightTracker();
+        var grid=caMenu.querySelector('.cam-grid')||caMenu;
+        positionCard(grid, null, true);
+        card.querySelector('h3').textContent='Analysis Tools';
+        card.querySelector('p').textContent='Here are your spatial analysis tools. Click any card to explore what it does.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='\ud83d\udc49 Click a tool card';
+      }
+
+      if(aPhase===2 && toolPanel){
+        /* Phase 3: user clicked a tool — highlight the ← Tools back button */
+        aPhase=3;
+        var backBtn=toolPanel.querySelector('[data-iso="back"],[data-buf="back"],[data-gap="back"],[data-hot="back"],[data-geo="back"]');
+        if(backBtn){
+          positionCard(backBtn, null, true);
+          startSpotlightTracker();
+        } else {
+          positionCard(toolPanel, null, true);
+          startSpotlightTracker();
+        }
+        var toolName=toolPanel.querySelector('b');
+        card.querySelector('h3').textContent=toolName?toolName.textContent:'Tool Panel';
+        card.querySelector('p').textContent='This is the tool\u2019s control panel. Click the \u2190 Tools button to go back to the menu.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='\ud83d\udc49 Click \u2190 Tools';
+      }
+
+      if(aPhase===3 && menuVisible && !toolPanel){
+        /* Phase 4: user returned to menu — enable Next, CA stays open for Reset step */
+        aPhase=4;
+        stopSpotlightTracker();
+        var grid=caMenu.querySelector('.cam-grid')||caMenu;
+        positionCard(grid, null, true);
+        card.querySelector('h3').textContent='Custom Analysis';
+        card.querySelector('p').textContent='Great \u2014 you\u2019ve explored the tools! Click Next to learn how to close this and reset the map.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='';
+        enableNext();
+        clearInterval(analysisWatcher);
+        analysisWatcher=null;
+      }
+    }, 500);
+  }
+
+  /* ── Reset watcher: waits for user to press Reset (CA closes, Explorer active) ── */
+  var resetWatcher=null;
+  function startResetWatch(){
+    if(resetWatcher) return;
+    resetWatcher=setInterval(function(){
+      if(current<0){ clearInterval(resetWatcher); resetWatcher=null; return; }
+      var step=STEPS[current];
+      if(!step || step.watch!=='reset') return;
+      /* Check: CA menu is hidden (or absent) AND Explorer button is active */
+      var caMenu=document.querySelector('.camenu');
+      var caHidden=!caMenu || caMenu.hidden;
+      var expBtn=document.querySelector('#modeTogBtns button[data-mode="explorer"]');
+      var isExplorer=expBtn && expBtn.getAttribute('aria-pressed')==='true';
+      if(caHidden && isExplorer){
+        enableNext();
+        clearInterval(resetWatcher);
+        resetWatcher=null;
+        /* Confirm reset worked */
+        card.querySelector('h3').textContent='All Reset!';
+        card.querySelector('p').textContent='The map is back to its default state. You\u2019re ready to explore on your own. Click Finish to close the tour.';
+        var hint=card.querySelector('[style*="font-size:12px"]');
+        if(hint) hint.innerHTML='';
+      }
+    }, 500);
+  }
+
+  function finish(){
+    card.innerHTML=
+      '<div style="text-align:center">'+
+      '<div style="font-size:32px;margin-bottom:8px">🎉</div>'+
+      '<h3>You’re all set!</h3>'+
+      '<p>The tour icon 🧭 in the header is always there if you need a refresher.</p>'+
+      '<div class="tour-actions" style="justify-content:center">'+
+        '<button type="button" class="tour-next" data-tour="done">Done</button>'+
+      '</div></div>';
+    card.classList.remove('show');
+    spotlight.style.display='none';
+    positionCard(null);
+    requestAnimationFrame(function(){ card.classList.add('show'); });
+    ls(LS_SEEN,'1');
+    ls(LS_STEP,'done');
+  }
+
+  /* ── Card button handler ── */
+  document.addEventListener('click',function(e){
+    var btn=e.target.closest('[data-tour]');
+    if(!btn) return;
+    var k=btn.getAttribute('data-tour');
+    if(k==='next'){ if(btn.disabled) return; advance(); }
+    else if(k==='back' && current>0) showStep(current-1);
+    else if(k==='skip'||k==='done') dismiss();
+    else if(k==='startTour') startTour();
+    else if(k==='skipWelcome') dismissWelcome();
+  });
+
+  /* ── ESC to dismiss ── */
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape' && (current>=0 || welcomeEl)) dismiss(), dismissWelcome();
+  });
+
+  /* ── Welcome card ── */
+  function showWelcome(){
+    welcomeEl=document.createElement('div');
+    welcomeEl.className='tour-welcome';
+    welcomeEl.innerHTML=
+      '<div class="tour-welcome-inner">'+
+        '<div class="tour-icon">🧭</div>'+
+        '<h2>Welcome to the Analytics Portal</h2>'+
+        '<p>A spatial data tool for exploring project layers across Malaysia.</p>'+
+        '<button type="button" class="tour-btn-skip" data-tour="skipWelcome">I don’t need instructions, I’ll figure it out myself</button>'+
+        '<button type="button" class="tour-btn-start" data-tour="startTour">Actually, show me around</button>'+
+      '</div>';
+    document.body.appendChild(welcomeEl);
+    requestAnimationFrame(function(){ welcomeEl.classList.add('show'); });
+  }
+
+  function dismissWelcome(){
+    if(!welcomeEl) return;
+    welcomeEl.classList.remove('show');
+    setTimeout(function(){ if(welcomeEl&&welcomeEl.parentNode) welcomeEl.parentNode.removeChild(welcomeEl); welcomeEl=null; },350);
+    ls(LS_SEEN,'1');
+  }
+
+  function startTour(){
+    dismissWelcome();
+    if(!overlay) createUI();
+    setTimeout(function(){ showStep(0); },400);
+  }
+
+  /* ── Entry points ── */
+  /* Header button */
+  var tourBtn=document.getElementById('tourBtn');
+  if(tourBtn) tourBtn.addEventListener('click',function(){ showWelcome(); });
+
+  /* First visit auto-show (after a 1.5s delay for the map to settle) */
 </body></html>
