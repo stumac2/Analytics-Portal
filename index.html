@@ -8887,32 +8887,23 @@ if(map){
     }, 500);
   }
 
-  /* ── Level change watcher: detect when user changes the level selector OR ticks a layer checkbox ── */
+  /* ── Level change watcher: advance when user clicks any layer checkbox in the panel ── */
   var levelWatcher=null;
+  var _levelClickHandler=null;
   function startLevelWatch(){
     if(levelWatcher) return;
-    /* Record initial state so we detect a change */
-    var btns=document.querySelectorAll('#geoTog button');
-    var initialLevel='';
-    btns.forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') initialLevel=b.textContent.trim(); });
-    var initialChecked=document.querySelectorAll('#lpanel input[type="checkbox"]:checked').length;
-    levelWatcher=setInterval(function(){
-      if(current<0){ clearInterval(levelWatcher); levelWatcher=null; return; }
-      var step=STEPS[current];
-      if(!step || step.watch!=='levelchange') return;
-      /* Check if level changed */
-      var currentLevel='';
-      document.querySelectorAll('#geoTog button').forEach(function(b){ if(b.getAttribute('aria-pressed')==='true') currentLevel=b.textContent.trim(); });
-      var levelChanged=currentLevel && currentLevel!==initialLevel;
-      /* Check if any new layer checkbox was ticked */
-      var nowChecked=document.querySelectorAll('#lpanel input[type="checkbox"]:checked').length;
-      var layerChanged=nowChecked!==initialChecked;
-      if(levelChanged || layerChanged){
-        enableNext();
-        clearInterval(levelWatcher);
-        levelWatcher=null;
-      }
-    }, 500);
+    var panel=document.getElementById('lpanel');
+    if(!panel) return;
+    _levelClickHandler=function(e){
+      var cb=e.target.closest('input[type="checkbox"]');
+      if(!cb) return;
+      enableNext();
+      panel.removeEventListener('click',_levelClickHandler,true);
+      _levelClickHandler=null;
+    };
+    panel.addEventListener('click',_levelClickHandler,true);
+    /* Keep a reference so dismiss() can clean up */
+    levelWatcher=true;
   }
 
   /* ── Fullscreen watcher: reposition spotlight onto close button ── */
@@ -9036,7 +9027,7 @@ if(map){
     card.classList.remove('show');
     spotlight.style.display='none';
     if(mapClickWatcher){ clearInterval(mapClickWatcher); mapClickWatcher=null; }
-    if(levelWatcher){ clearInterval(levelWatcher); levelWatcher=null; }
+    if(levelWatcher && _levelClickHandler){ var p=document.getElementById('lpanel'); if(p) p.removeEventListener('click',_levelClickHandler,true); _levelClickHandler=null; } levelWatcher=null;
     if(fsWatcher){ fsWatcher.disconnect(); fsWatcher=null; }
     if(tablesWatcher){ clearInterval(tablesWatcher); tablesWatcher=null; }
     if(dlWatcher){ dlWatcher.disconnect(); dlWatcher=null; }
