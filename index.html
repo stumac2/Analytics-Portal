@@ -2457,7 +2457,7 @@ const REF_TILES={
 
 const refState={labels:false,hillshade:false,contour:false,buildings:false,districts:true};
 /* Building footprints only exist in the tiles from zoom 13 — tell the user to zoom in */
-const CONTOUR_MINZOOM=9;
+const CONTOUR_MINZOOM=11;
 function updateContourHint(){
   const cb=document.querySelector('input[data-ref="contour"]'); if(!cb) return;
   const lbl=cb.closest('label'); if(!lbl) return;
